@@ -1,0 +1,27 @@
+/**
+ * Tokens de diseño — 05D_FRONTEND_DISENO.md
+ * Ningún color/medida se escribe "a mano" en un componente: todo sale de aquí
+ * o de plugins/vuetify.ts (05D §10.1/§10.4).
+ */
+:root {
+  /* Tipografía (05D §3) */
+  --font-titulo: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-cuerpo: 'Inter', system-ui, sans-serif;
+  --font-datos: 'JetBrains Mono', monospace;
+
+  /* Forma (05D §4) */
+  --radio-sm: 8px;
+  --radio-md: 12px;
+  --radio-lg: 16px;
+  --radio-xl: 24px;
+
+  /* Sombras suaves y difusas — no usar elevaciones por defecto de Vuetify (05D §4) */
+  --sombra-1: 0 1px 2px rgba(10, 41, 71, 0.04), 0 1px 3px rgba(10, 41, 71, 0.06);
+  --sombra-2: 0 4px 12px rgba(10, 41, 71, 0.06), 0 2px 4px rgba(10, 41, 71, 0.04);
+  --sombra-3: 0 12px 32px rgba(10, 41, 71, 0.1), 0 4px 8px rgba(10, 41, 71, 0.06);
+
+  /* Gradiente institucional — la "cinta". Uso EXCLUSIVO: app bar (3px), barra del
+     stepper de postulación, encabezado de la tarjeta de constancia y del PDF de
+     resultados (05D §2.4). Prohibido como fondo de botones/tarjetas/secciones. */
+  --grad-institucional: linear-gradient(90deg, #0090d8 0%, #0a2947 100%);
+}

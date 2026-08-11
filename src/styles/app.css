@@ -1,0 +1,56 @@
+/* Fuentes autoalojadas (05D §3 / 05A §1) — nunca depender de Google Fonts en runtime */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+
+@import './tokens.css';
+
+html,
+body {
+  font-family: var(--font-cuerpo);
+}
+
+h1,
+h2,
+h3,
+.v-toolbar-title,
+.text-titulo {
+  font-family: var(--font-titulo);
+}
+
+.text-datos,
+code {
+  font-family: var(--font-datos);
+}
+
+/* Foco visible siempre — nunca outline: none (05D §9) */
+:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}
+
+/* Vuetify's VStepperItem pinta el avatar del paso activo/completado con
+   `surface-variant` (M3 por defecto), y en este tema `surface-variant` es
+   casi idéntico a `surface`/`background` (05D lo define así a propósito para
+   superficies sutiles) — el paso activo del stepper quedaba invisible. Se
+   fuerza `primary` aquí porque `:color="primary"` en <v-stepper-item> no
+   alcanza a ganarle a la regla de Vuetify por especificidad de selector. */
+.v-stepper-item--selected .v-stepper-item__avatar.v-avatar,
+.v-stepper-item--complete .v-stepper-item__avatar.v-avatar {
+  background: rgb(var(--v-theme-primary)) !important;
+  color: rgb(var(--v-theme-on-primary, 255, 255, 255)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
