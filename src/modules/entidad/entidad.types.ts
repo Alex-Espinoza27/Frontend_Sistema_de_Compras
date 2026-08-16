@@ -124,8 +124,14 @@ export interface ConvocatoriaListaItem {
   estado: Estado
   urgencia_dias: number
   total_ofertas: number
+  /** Ofertas ya calificadas (APROBADA/DESAPROBADA), para el indicador de
+   * avance de evaluación (05C hardening, pedido explícitamente por el usuario). */
+  ofertas_evaluadas: number
   /** DESIERTA/CANCELADA (05C hardening, pedido explícitamente por el usuario). */
   motivo_cierre: string | null
+  /** N.° del documento "Indagación de Mercado" — null si DESIERTA sin ofertas
+   * (no se generó documento, 05C hardening). */
+  numero_indagacion: string | null
 }
 
 /** `GET /convocatorias/{id}` (`ConvocatoriaController::show`, E4). */

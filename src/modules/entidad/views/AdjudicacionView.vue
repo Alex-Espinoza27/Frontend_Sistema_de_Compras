@@ -42,6 +42,11 @@ cargar()
 
 const aprobadas = computed(() => cuadro.value?.items.filter((i) => i.estado === 'APROBADA') ?? [])
 const hayAprobadas = computed(() => aprobadas.value.length > 0)
+const sinOfertas = computed(() => (cuadro.value?.items.length ?? 0) === 0)
+
+// 05C hardening (pedido explícitamente por el usuario): si nunca llegó
+// ninguna oferta, se sugiere el motivo exacto — editable, no se fuerza.
+const motivoSugerido = computed(() => (sinOfertas.value ? 'No se presentaron cotizaciones.' : ''))
 
 const adjudicarAbierto = ref(false)
 const adjudicando = ref(false)
@@ -119,7 +124,10 @@ async function confirmarDesierta(motivo: string | undefined) {
         </v-table>
       </v-card>
 
-      <v-alert v-if="!hayAprobadas" type="warning" density="compact" class="mb-4">
+      <v-alert v-if="sinOfertas" type="warning" density="compact" class="mb-4">
+        No se presentaron cotizaciones: no se puede adjudicar. Solo queda declarar desierta la convocatoria.
+      </v-alert>
+      <v-alert v-else-if="!hayAprobadas" type="warning" density="compact" class="mb-4">
         No hay ofertas aprobadas: no se puede adjudicar. Solo queda declarar desierta la convocatoria.
       </v-alert>
 
@@ -144,9 +152,14 @@ async function confirmarDesierta(motivo: string | undefined) {
     <BaseConfirmacion
       v-model:abierto="desiertaAbierto"
       titulo="Declarar desierta"
-      mensaje="Esta acción cierra la convocatoria sin adjudicar, genera el PDF de resultados y notifica a los postores. Indica el motivo."
+      :mensaje="
+        sinOfertas
+          ? 'Esta acción cierra la convocatoria sin adjudicar y notifica a los postores. Indica el motivo.'
+          : 'Esta acción cierra la convocatoria sin adjudicar, genera el PDF de resultados y notifica a los postores. Indica el motivo.'
+      "
       texto-confirmar="Declarar desierta"
       pedir-motivo
+      :motivo-sugerido="motivoSugerido"
       :cargando="declarandoDesierta"
       @confirmar="confirmarDesierta"
     />

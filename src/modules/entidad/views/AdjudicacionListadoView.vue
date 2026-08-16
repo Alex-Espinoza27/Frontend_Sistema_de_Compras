@@ -11,7 +11,7 @@ import { useListado } from '@/composables/useListado'
 import type { ConvocatoriaListaItem } from '@/modules/entidad/entidad.types'
 import dayjs from '@/plugins/dayjs'
 
-const { items, paginacion, cargando, params } = useListado<ConvocatoriaListaItem>(
+const { items, paginacion, cargando, params, recargar } = useListado<ConvocatoriaListaItem>(
   convocatoriasApi.index,
   { lista_para_adjudicar: 'true', ordenar_por: 'fecha_fin', direccion: 'asc' },
 )
@@ -29,6 +29,10 @@ const cabeceras = [
   <v-container class="py-8">
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Adjudicación</div>
+      <v-btn icon color="primary" variant="text" :loading="cargando" @click="recargar()">
+        <v-icon icon="mdi-refresh" />
+        <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
+      </v-btn>
     </div>
 
     <div class="d-flex flex-wrap ga-4 mb-4">

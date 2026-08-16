@@ -71,7 +71,13 @@ async function confirmarCancelar(motivo: string | undefined) {
   <v-container class="py-8">
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Convocatorias</div>
-      <v-btn to="/app/convocatorias/nueva" prepend-icon="mdi-plus">Nueva convocatoria</v-btn>
+      <div class="d-flex ga-2">
+        <v-btn icon color="primary" variant="text" :loading="cargando" @click="recargar()">
+          <v-icon icon="mdi-refresh" />
+          <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
+        </v-btn>
+        <v-btn to="/app/convocatorias/nueva" prepend-icon="mdi-plus">Nueva convocatoria</v-btn>
+      </div>
     </div>
 
     <div class="d-flex flex-wrap ga-4 mb-4">
@@ -143,7 +149,7 @@ async function confirmarCancelar(motivo: string | undefined) {
             Editar
           </v-btn>
         </template>
-        <template v-else-if="['ADJUDICADA', 'DESIERTA'].includes(item.estado.codigo)">
+        <template v-else-if="item.estado.codigo === 'ADJUDICADA' || (item.estado.codigo === 'DESIERTA' && item.numero_indagacion)">
           <v-btn :to="`/app/convocatorias/${item.convocatoria_id}/resultados`" variant="text" size="small">
             Ver resultados
           </v-btn>

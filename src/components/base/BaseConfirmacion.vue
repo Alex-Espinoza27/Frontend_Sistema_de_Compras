@@ -13,6 +13,10 @@ const props = withDefaults(
     fuerte?: boolean
     pedirMotivo?: boolean
     motivoRequerido?: boolean
+    /** Texto inicial del motivo al abrir (editable) — ej. "No se presentaron
+     * cotizaciones." cuando ya se sabe la causa (05C hardening, pedido
+     * explícitamente por el usuario). */
+    motivoSugerido?: string
     cargando?: boolean
   }>(),
   {
@@ -21,6 +25,7 @@ const props = withDefaults(
     fuerte: false,
     pedirMotivo: false,
     motivoRequerido: true,
+    motivoSugerido: '',
     cargando: false,
   },
 )
@@ -34,7 +39,7 @@ const motivo = ref('')
 watch(abierto, (valor) => {
   if (valor) {
     aceptado.value = false
-    motivo.value = ''
+    motivo.value = props.motivoSugerido
   }
 })
 
