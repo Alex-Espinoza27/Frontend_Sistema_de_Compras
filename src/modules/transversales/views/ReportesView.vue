@@ -294,6 +294,10 @@ function filtrosActuales() {
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Reportes</div>
       <div class="d-flex ga-2">
+        <v-btn icon color="primary" variant="text" :loading="cargando" @click="buscar()">
+          <v-icon icon="mdi-refresh" />
+          <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
+        </v-btn>
         <v-btn variant="tonal" prepend-icon="mdi-file-excel-outline" @click="exportarExcel">Excel</v-btn>
         <v-btn variant="tonal" prepend-icon="mdi-file-pdf-box" @click="exportarPdf">PDF</v-btn>
       </div>

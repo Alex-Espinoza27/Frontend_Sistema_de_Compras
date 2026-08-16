@@ -81,7 +81,13 @@ async function confirmarEliminar() {
   <v-container class="py-8">
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Requerimientos</div>
-      <v-btn to="/app/requerimientos/nuevo" prepend-icon="mdi-plus">Nuevo requerimiento</v-btn>
+      <div class="d-flex ga-2">
+        <v-btn icon color="primary" variant="text" :loading="cargando" @click="recargar()">
+          <v-icon icon="mdi-refresh" />
+          <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
+        </v-btn>
+        <v-btn to="/app/requerimientos/nuevo" prepend-icon="mdi-plus">Nuevo requerimiento</v-btn>
+      </div>
     </div>
 
     <div class="d-flex flex-wrap ga-4 mb-4">

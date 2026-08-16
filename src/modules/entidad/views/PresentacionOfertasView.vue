@@ -31,6 +31,10 @@ const cabeceras = [
   <v-container class="py-8">
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Presentación de Ofertas</div>
+      <v-btn icon color="primary" variant="text" :loading="cargando" @click="recargar()">
+        <v-icon icon="mdi-refresh" />
+        <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
+      </v-btn>
     </div>
 
     <div class="d-flex flex-wrap ga-4 mb-4">
