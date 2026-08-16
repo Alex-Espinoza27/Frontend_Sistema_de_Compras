@@ -55,6 +55,7 @@ export const adminApi = {
   configuracion: () => cliente.get<never, ConfiguracionItem[]>('/admin/configuracion'),
   actualizarConfiguracion: (configuraciones: { clave: string; valor: string }[]) =>
     cliente.put<never, null>('/admin/configuracion', { configuraciones }),
+  probarCorreo: (destino: string) => cliente.post<never, null>('/admin/configuracion/probar-correo', { destino }),
   uit: () => cliente.get<never, UitItem[]>('/admin/uit'),
   crearUit: (body: { anio: number; valor: number; vigente?: boolean }) =>
     cliente.post<never, { uit_id: number }>('/admin/uit', body),

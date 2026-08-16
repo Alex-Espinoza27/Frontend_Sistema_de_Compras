@@ -20,21 +20,39 @@ async function cargarConfiguracion() {
 }
 cargarConfiguracion()
 
+const PLACEHOLDER_SECRETO = '••••••••'
+
 const guardandoConfig = ref(false)
 async function guardarConfiguracion() {
   guardandoConfig.value = true
   try {
-    // El backend exige `valor` como required (no acepta string vacío) — una
-    // clave que sigue vacía (ej. PLANTILLA_DJ_DEFECTO recién sembrada) no se
-    // puede "guardar en blanco" vía este endpoint, así que se omite del envío
-    // en vez de romper la actualización de todas las demás con un 422.
-    const paraEnviar = configuraciones.value.filter((c) => c.valor !== '')
+    // Para CONF_TIPO=SECRETO (ej. SMTP_PASSWORD) el backend nunca devuelve el
+    // valor real, solo un placeholder si ya hay uno guardado — si no se tocó
+    // el campo, se omite del envío para no sobreescribir el secreto real con
+    // el propio placeholder. Los demás campos sí se pueden guardar en blanco
+    // a propósito (ej. SMTP_CIFRADO="" = sin cifrado).
+    const paraEnviar = configuraciones.value.filter((c) => !(c.tipo === 'SECRETO' && c.valor === PLACEHOLDER_SECRETO))
     if (paraEnviar.length) {
       await adminApi.actualizarConfiguracion(paraEnviar.map((c) => ({ clave: c.clave, valor: c.valor })))
     }
     ui.mostrarSnackbar('Configuración actualizada.', 'success')
+    await cargarConfiguracion()
   } finally {
     guardandoConfig.value = false
+  }
+}
+
+// --- Probar envío de correo (05C hardening, pedido por el usuario) -------------
+const correoPrueba = ref('')
+const enviandoPrueba = ref(false)
+async function enviarCorreoPrueba() {
+  if (!correoPrueba.value) return
+  enviandoPrueba.value = true
+  try {
+    await adminApi.probarCorreo(correoPrueba.value)
+    ui.mostrarSnackbar('Correo de prueba enviado. Revisa la bandeja del destinatario.', 'success')
+  } finally {
+    enviandoPrueba.value = false
   }
 }
 
@@ -103,7 +121,8 @@ async function guardarUit() {
             <v-text-field
               v-model="c.valor"
               :label="c.descripcion ?? c.clave"
-              :type="c.tipo === 'ENTERO' ? 'number' : 'text'"
+              :type="c.tipo === 'ENTERO' ? 'number' : c.tipo === 'SECRETO' ? 'password' : 'text'"
+              :placeholder="c.tipo === 'SECRETO' ? 'Dejar vacío para no cambiar' : undefined"
               :hint="c.clave"
               persistent-hint
             />
@@ -113,6 +132,25 @@ async function guardarUit() {
           <v-btn :loading="guardandoConfig" @click="guardarConfiguracion">Guardar cambios</v-btn>
         </div>
       </template>
+    </v-card>
+
+    <v-card class="pa-4 mb-6">
+      <div class="text-subtitle-1 text-titulo mb-2">Probar envío de correo</div>
+      <div class="text-body-2 text-grey mb-4">
+        Envía un correo de prueba con las credenciales SMTP guardadas arriba, para confirmar que funcionan.
+      </div>
+      <div class="d-flex flex-wrap ga-4 align-center">
+        <v-text-field
+          v-model="correoPrueba"
+          label="Correo de destino"
+          type="email"
+          style="max-width: 320px"
+          hide-details
+        />
+        <v-btn :loading="enviandoPrueba" :disabled="!correoPrueba" @click="enviarCorreoPrueba">
+          Enviar correo de prueba
+        </v-btn>
+      </div>
     </v-card>
 
     <v-card class="pa-4">
