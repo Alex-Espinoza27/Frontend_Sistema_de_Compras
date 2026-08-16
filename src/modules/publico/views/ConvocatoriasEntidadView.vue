@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { datosAbiertosApi } from '@/api/datosAbiertos.api'
@@ -8,28 +8,34 @@ import { useDescarga } from '@/composables/useDescarga'
 import { useListado } from '@/composables/useListado'
 import CardConvocatoria from '@/modules/publico/components/CardConvocatoria.vue'
 import ModalMotivoCierre from '@/modules/publico/components/ModalMotivoCierre.vue'
-import type { ConvocatoriaPublicaItem, EstadoGrupo, EstadisticasPublicas } from '@/modules/publico/publico.types'
+import type { ConvocatoriaPublicaItem, EstadoGrupo, EstadisticasPublicas, TipoConvocatoria } from '@/modules/publico/publico.types'
 
+// `entidadId` opcional como prop (05C hardening, pedido explícitamente por el
+// usuario): cuando la plataforma solo tiene una entidad, `PortadaView.vue`
+// incrusta este mismo componente directamente en "/" (sin redirigir a
+// "/entidad/{id}") — ahí no hay `route.params.id`, así que se resuelve por
+// prop en vez de por ruta.
+const props = defineProps<{ entidadId?: number }>()
 const route = useRoute()
-const entidadId = Number(route.params.id)
+const entidadId = computed(() => props.entidadId ?? Number(route.params.id))
 
 const entidadNombre = ref('')
 publicoApi.entidades().then((respuesta) => {
-  const entidad = respuesta.items.find((item) => item.entidad_id === entidadId)
+  const entidad = respuesta.items.find((item) => item.entidad_id === entidadId.value)
   entidadNombre.value = entidad ? `${entidad.razon_social} (${entidad.sigla})` : ''
 })
 
 // 05C hardening (pedido explícitamente por el usuario): mismos cards de
 // estado y descargas que `/datos-abiertos`, acotados a esta entidad.
 const estadisticas = ref<EstadisticasPublicas | null>(null)
-datosAbiertosApi.estadisticas(entidadId).then((data) => (estadisticas.value = data))
+datosAbiertosApi.estadisticas(entidadId.value).then((data) => (estadisticas.value = data))
 const { cargando: descargando, bloqueado, descargar } = useDescarga()
 
 const pestana = ref<EstadoGrupo>('VIGENTES')
 
 const { items, paginacion, cargando, params, recargar } = useListado<ConvocatoriaPublicaItem>(
   publicoApi.convocatorias,
-  { estado_grupo: pestana.value, entidad_id: entidadId, ordenar_por: 'fecha_fin', direccion: 'asc' },
+  { estado_grupo: pestana.value, entidad_id: entidadId.value, ordenar_por: 'fecha_fin', direccion: 'asc' },
 )
 
 watch(pestana, (valor) => {
@@ -37,6 +43,28 @@ watch(pestana, (valor) => {
   params.pagina = 1
   recargar()
 })
+
+// Filtros por nombre/número y tipo (05C hardening, pedido explícitamente por
+// el usuario): mismo patrón que ya existe en `ListadoConvocatorias.vue`
+// (proveedor autenticado) — antes esta pantalla pública no tenía ninguno.
+const buscar = ref('')
+let temporizadorBuscar: ReturnType<typeof setTimeout>
+watch(buscar, (valor) => {
+  clearTimeout(temporizadorBuscar)
+  temporizadorBuscar = setTimeout(() => {
+    params.buscar = valor || undefined
+    params.pagina = 1
+    recargar()
+  }, 400)
+})
+
+const tipo = ref<TipoConvocatoria | null>(null)
+function elegirTipo(valor: TipoConvocatoria | null) {
+  tipo.value = tipo.value === valor ? null : valor
+  params.tipo = tipo.value ?? undefined
+  params.pagina = 1
+  recargar()
+}
 
 const mensajeVacio: Record<EstadoGrupo, string> = {
   VIGENTES: 'Aún no hay convocatorias vigentes en esta entidad.',
@@ -117,6 +145,21 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
         </v-card-text>
       </v-card>
     </template>
+
+    <div class="d-flex flex-wrap align-center ga-4 mb-4">
+      <v-text-field
+        v-model="buscar"
+        label="Buscar por nombre del servicio"
+        prepend-inner-icon="mdi-magnify"
+        clearable
+        style="max-width: 320px"
+        hide-details
+      />
+      <v-btn-toggle density="comfortable" variant="outlined" divided>
+        <v-btn :color="tipo === 'BIEN' ? 'primary' : undefined" @click="elegirTipo('BIEN')">Bien</v-btn>
+        <v-btn :color="tipo === 'SERVICIO' ? 'primary' : undefined" @click="elegirTipo('SERVICIO')">Servicio</v-btn>
+      </v-btn-toggle>
+    </div>
 
     <v-tabs v-model="pestana" class="mb-6">
       <v-tab value="VIGENTES">Vigentes</v-tab>

@@ -1,15 +1,27 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 
 import { publicoApi } from '@/api/publico.api'
+import ConvocatoriasEntidadView from '@/modules/publico/views/ConvocatoriasEntidadView.vue'
 import TarjetaEntidad from '@/modules/publico/components/TarjetaEntidad.vue'
 import type { EntidadPublica } from '@/modules/publico/publico.types'
 
-const router = useRouter()
 const params = reactive({ buscar: '', soloConVigentes: false })
 const entidades = ref<EntidadPublica[]>([])
 const cargando = ref(false)
+
+// Entidad única (05C hardening, pedido explícitamente por el usuario): antes
+// se saltaba el paso de elegir entre tarjetas navegando a "/entidad/{id}"
+// (redirect visible, y cualquiera podía después cambiar el id en la URL). En
+// vez de eso, cuando la plataforma solo aloja una entidad, esta misma
+// pantalla (la URL sigue siendo "/") incrusta directamente el componente de
+// convocatorias de esa entidad. Si hay más de una, o el usuario está
+// filtrando por texto, se muestra la grilla normal.
+const entidadUnicaId = ref<number | null>(null)
+// Hasta que se resuelve la primera consulta no se sabe si hay 1 o varias
+// entidades — mientras tanto no se muestra ni el hero (se vería y
+// desaparecería de inmediato si termina habiendo una sola) ni el listado.
+const primeraCarga = ref(true)
 
 async function cargar() {
   cargando.value = true
@@ -19,15 +31,10 @@ async function cargar() {
       solo_con_vigentes: params.soloConVigentes || undefined,
     })
     entidades.value = respuesta.items
-    // Entidad preseleccionada cuando la plataforma solo aloja una (05C
-    // hardening, pedido explícitamente por el usuario): se salta el paso de
-    // elegir entre tarjetas y va directo a sus convocatorias. Si hay más de
-    // una, o el usuario está filtrando por texto, se muestra la grilla normal.
-    if (respuesta.items.length === 1 && !params.buscar) {
-      router.replace(`/entidad/${respuesta.items[0].entidad_id}`)
-    }
+    entidadUnicaId.value = respuesta.items.length === 1 && !params.buscar ? respuesta.items[0].entidad_id : null
   } finally {
     cargando.value = false
+    primeraCarga.value = false
   }
 }
 
@@ -51,7 +58,16 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
 </script>
 
 <template>
-  <div>
+  <!-- Plataforma con una sola entidad (05C hardening, pedido explícitamente
+       por el usuario): "/" muestra directamente sus convocatorias, mismo
+       componente que usa la ruta "/entidad/{id}", sin redirigir. -->
+  <ConvocatoriasEntidadView v-if="entidadUnicaId" :entidad-id="entidadUnicaId" />
+
+  <div v-else-if="primeraCarga" class="d-flex justify-center py-16">
+    <v-progress-circular indeterminate color="primary" />
+  </div>
+
+  <div v-else>
     <section class="hero py-12 px-4">
       <v-container>
         <div class="text-h4 text-titulo mb-2">Compras La Perla</div>

@@ -7,6 +7,7 @@
 // y el botón de TDR/EETT ahora vive debajo del nombre del servicio, no
 // después de las fechas.
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import dayjs from '@/plugins/dayjs'
 import { useAuthStore } from '@/stores/auth.store'
 import { useDescarga } from '@/composables/useDescarga'
@@ -18,8 +19,28 @@ const props = defineProps<{ convocatoria: ConvocatoriaPublicaItem }>()
 const emit = defineEmits<{ 'ver-motivo': [id: number] }>()
 
 const auth = useAuthStore()
+const router = useRouter()
 const { cargando, abrirEnNuevaPestana } = useDescarga()
 const { cargando: descargandoTdr, descargar: descargarArchivo } = useDescarga()
+
+// Postular (05C hardening, pedido explícitamente por el usuario): tras
+// iniciar sesión, lleva directo al formulario de postulación de esta misma
+// convocatoria (no al listado genérico) — LoginView.vue ya respeta
+// `route.query.redirect` si viene.
+const rutaLogin = computed(() => ({
+  path: '/login',
+  query: { redirect: `/app/postular/${props.convocatoria.convocatoria_id}` },
+}))
+
+// Si ya hay una sesión iniciada con un rol que no es PROVEEDOR (ej. quedó
+// logueado como ADMINISTRADOR/ENTIDAD en otra pestaña), un simple `to="/login"`
+// no sirve: el guard `soloInvitado` de /login rebota a cualquier usuario ya
+// autenticado de vuelta a /app. Hay que cerrar esa sesión primero para que el
+// botón realmente lleve al formulario de login.
+async function irALoginParaPostular() {
+  if (auth.autenticado) await auth.logout()
+  router.push(rutaLogin.value)
+}
 
 function verResultados() {
   abrirEnNuevaPestana(publicoApi.resultadosPdfUrl(props.convocatoria.convocatoria_id))
@@ -135,12 +156,17 @@ const venceEnTexto = computed(() => {
           >
             Postular
           </v-btn>
-          <v-btn v-else-if="!auth.autenticado" to="/login" variant="tonal" size="small" block class="boton-ajustable">
+          <v-btn v-else-if="!auth.autenticado" :to="rutaLogin" variant="tonal" size="small" block class="boton-ajustable">
             Inicia sesión para postular
           </v-btn>
-          <div v-else class="text-caption text-grey text-right">
-            Solo los proveedores registrados pueden postular.
-          </div>
+          <template v-else>
+            <v-btn variant="tonal" size="small" block class="boton-ajustable" @click="irALoginParaPostular">
+              Iniciar sesión
+            </v-btn>
+            <div class="text-caption text-grey text-right">
+              Solo los proveedores registrados pueden postular.
+            </div>
+          </template>
         </template>
 
         <v-btn
@@ -201,10 +227,17 @@ const venceEnTexto = computed(() => {
    angosta donde viven (05C hardening, pedido explícitamente por el usuario
    — antes se salía del borde en pantallas medias); se permite salto de
    línea en vez de desbordar. El chip de estado usa el mismo tratamiento,
-   pero ya lo trae `BaseChipEstado.vue` de fábrica. */
+   pero ya lo trae `BaseChipEstado.vue` de fábrica.
+
+   `min-height` cubre el caso de 2 líneas (ej. "Ver resultados"/
+   "Ver documento" no siempre entran en una sola línea en esta columna
+   angosta, a diferencia de "Ver motivo") y se aplica siempre, para que
+   todas las cards de una misma lista tengan el botón a la misma altura
+   en vez de saltar entre alto/bajo según el texto de cada una (05C
+   hardening, pedido explícitamente por el usuario). */
 .boton-ajustable {
   height: auto !important;
-  min-height: 36px;
+  min-height: 52px;
   white-space: normal;
 }
 .boton-ajustable :deep(.v-btn__content) {

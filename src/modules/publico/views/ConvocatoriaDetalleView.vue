@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { publicoApi } from '@/api/publico.api'
 import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
@@ -10,6 +10,7 @@ import dayjs from '@/plugins/dayjs'
 import type { ConvocatoriaPublicaDetalle } from '@/modules/publico/publico.types'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const { cargando: descargando, abrirEnNuevaPestana } = useDescarga()
 const { cargando: descargandoTdr, descargar } = useDescarga()
@@ -42,6 +43,19 @@ function descargarTdr() {
 const etiquetaTdr = computed(() =>
   detalle.value?.tipo === 'SERVICIO' ? 'Descargar Especificaciones Técnicas' : 'Descargar Términos de Referencia',
 )
+
+// Postular (05C hardening, pedido explícitamente por el usuario): igual que
+// en CardConvocatoria.vue — el login queda apuntando directo al formulario
+// de postulación, y si ya hay sesión con otro rol, se cierra primero (el
+// guard `soloInvitado` de /login rebota a cualquier usuario ya autenticado).
+const rutaLogin = computed(() => ({
+  path: '/login',
+  query: { redirect: `/app/postular/${detalle.value?.convocatoria_id}` },
+}))
+async function irALoginParaPostular() {
+  if (auth.autenticado) await auth.logout()
+  router.push(rutaLogin.value)
+}
 
 // Motivo/resultado visibles sin acción adicional (05C hardening, pedido
 // explícitamente por el usuario). DESIERTA ahora también descarga el
@@ -91,10 +105,13 @@ const etiquetaDocumento = computed(() => (detalle.value?.estado.codigo === 'DESI
             <v-btn v-if="auth.usuario?.rol === 'PROVEEDOR'" :to="`/app/postular/${detalle.convocatoria_id}`">
               Postular
             </v-btn>
-            <v-btn v-else-if="!auth.autenticado" to="/login" variant="tonal">Inicia sesión para postular</v-btn>
-            <div v-else class="text-caption text-grey" style="max-width: 180px">
-              Solo los proveedores registrados pueden postular.
-            </div>
+            <v-btn v-else-if="!auth.autenticado" :to="rutaLogin" variant="tonal">Inicia sesión para postular</v-btn>
+            <template v-else>
+              <v-btn variant="tonal" @click="irALoginParaPostular">Iniciar sesión</v-btn>
+              <div class="text-caption text-grey" style="max-width: 180px">
+                Solo los proveedores registrados pueden postular.
+              </div>
+            </template>
           </template>
 
           <v-btn

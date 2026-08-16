@@ -13,11 +13,13 @@ interface EstadoSnackbar {
 const CLAVE_TEMA = 'compras-la-perla:tema'
 const CLAVE_DISENO_NAV = 'compras-la-perla:diseno-nav'
 
-/** Preferencia de tema: localStorage (es UI, no sesión) o `prefers-color-scheme` (05A §4). */
+/** Preferencia de tema: localStorage (es UI, no sesión); si nunca se eligió
+ * ninguna, el modo claro es el default (05C hardening, pedido explícitamente
+ * por el usuario) — antes se usaba `prefers-color-scheme` del sistema, que
+ * arrancaba en oscuro para cualquiera con ese ajuste en el SO/navegador. */
 function temaInicial(): Tema {
   const guardado = localStorage.getItem(CLAVE_TEMA)
-  if (guardado === 'claro' || guardado === 'oscuro') return guardado
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro'
+  return guardado === 'oscuro' ? 'oscuro' : 'claro'
 }
 
 /** Diseño de navegación (05C hardening: botón para comparar barra lateral vs

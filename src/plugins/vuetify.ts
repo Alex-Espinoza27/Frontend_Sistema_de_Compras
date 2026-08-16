@@ -14,7 +14,10 @@ const claro: ThemeDefinition = {
     background: '#F5F8FB',
     surface: '#FFFFFF',
     'surface-variant': '#FAFCFE',
-    info: '#0090D8',
+    // 05C hardening (pedido explícitamente por el usuario): antes tenía el
+    // mismo hex que `primary` — EN_EVALUACION y ADJUDICADA se veían
+    // idénticos en cualquier vista que mezclara estados.
+    info: '#7B3FA0',
     success: '#10916A',
     warning: '#C2790C',
     error: '#C43D3D',
@@ -39,7 +42,7 @@ const oscuro: ThemeDefinition = {
     background: '#0B1622',
     surface: '#132436',
     'surface-variant': '#0F1D2C',
-    info: '#38B0E8',
+    info: '#B47FD9',
     success: '#3FBF95',
     warning: '#E8A33D',
     error: '#E96A6A',
