@@ -8,18 +8,21 @@ import { ref } from 'vue'
 import { convocatoriasApi } from '@/api/convocatorias.api'
 import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
-import BaseDatePicker from '@/components/base/BaseDatePicker.vue'
+import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useListado } from '@/composables/useListado'
 import type { ConvocatoriaListaItem } from '@/modules/entidad/entidad.types'
 import dayjs from '@/plugins/dayjs'
 import { useUiStore } from '@/stores/ui.store'
+import { hoyTexto } from '@/utils/fechas'
 
 const ui = useUiStore()
 
+// El filtro de fecha (antes dos `BaseDatePicker` sueltos, 05C hardening)
+// arranca marcado en "Hoy".
 const { items, paginacion, cargando, params, recargar } = useListado<ConvocatoriaListaItem>(
   convocatoriasApi.index,
-  { ordenar_por: 'fecha_fin', direccion: 'asc' },
+  { ordenar_por: 'fecha_fin', direccion: 'asc', desde: hoyTexto(), hasta: hoyTexto() },
 )
 
 const opcionesEstado = [
@@ -96,19 +99,11 @@ async function confirmarCancelar(motivo: string | undefined) {
         style="max-width: 180px"
         @update:model-value="recargar()"
       />
-      <BaseDatePicker
-        v-model="params.desde as string"
-        label="Desde"
-        clearable
-        style="max-width: 180px"
-        @update:model-value="recargar()"
-      />
-      <BaseDatePicker
-        v-model="params.hasta as string"
-        label="Hasta"
-        clearable
-        style="max-width: 180px"
-        @update:model-value="recargar()"
+      <BaseRangoFechas
+        v-model:desde="params.desde as string"
+        v-model:hasta="params.hasta as string"
+        style="max-width: 260px"
+        @aplicar="recargar()"
       />
     </div>
 

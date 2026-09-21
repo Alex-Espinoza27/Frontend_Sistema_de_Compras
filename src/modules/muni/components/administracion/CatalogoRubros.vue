@@ -1,11 +1,16 @@
 <script setup lang="ts">
 // I5 — Catálogo de rubros (05B). Sin paginación (el backend devuelve todo).
+// "Eliminar" no existe (05C hardening, pedido explícitamente por el
+// usuario): un rubro se desactiva en vez de borrarse — mismo patrón que
+// `AreasView.vue` (`v-switch` en la columna "Estado"). Un rubro inactivo
+// deja de ofrecerse en requerimientos/registro nuevos (`PublicoController::rubros`),
+// pero los que ya lo usan no se ven afectados.
 import { reactive, ref } from 'vue'
 
 import { adminApi } from '@/api/admin.api'
-import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import type { RubroAdmin, TipoRubro } from '@/modules/muni/muni.types'
 import { useUiStore } from '@/stores/ui.store'
+import { requerido } from '@/utils/validaciones'
 
 interface ErrorApi {
   response?: { status?: number; data?: { mensaje?: string | null; errores?: Record<string, string[]> } }
@@ -25,10 +30,12 @@ const cabeceras = [
   { title: 'Tipo', key: 'tipo' },
   { title: 'Código', key: 'codigo' },
   { title: 'Nombre', key: 'nombre' },
+  { title: 'Estado', key: 'activo' },
   { title: '', key: 'acciones', sortable: false },
 ]
 
 const abierto = ref(false)
+const formValido = ref(false)
 const editando = ref<RubroAdmin | null>(null)
 const form = reactive({ tipo: 'SERVICIO' as TipoRubro, codigo: '', nombre: '' })
 const guardando = ref(false)
@@ -51,14 +58,15 @@ function abrirEditar(item: RubroAdmin) {
   abierto.value = true
 }
 async function guardar() {
+  if (!formValido.value) return
   guardando.value = true
   erroresCampo.value = {}
   try {
     if (editando.value) {
-      await adminApi.actualizarRubro(editando.value.rubro_id, { ...form })
+      await adminApi.actualizarRubro(editando.value.rubro_id, { ...form, activo: editando.value.activo })
       ui.mostrarSnackbar('Rubro actualizado.', 'success')
     } else {
-      await adminApi.crearRubro({ ...form })
+      await adminApi.crearRubro({ ...form, activo: true })
       ui.mostrarSnackbar('Rubro creado.', 'success')
     }
     abierto.value = false
@@ -71,28 +79,13 @@ async function guardar() {
   }
 }
 
-const eliminarAbierto = ref(false)
-const eliminarId = ref<number | null>(null)
-const eliminando = ref(false)
-const errorEliminar = ref('')
-function pedirEliminar(id: number) {
-  eliminarId.value = id
-  errorEliminar.value = ''
-  eliminarAbierto.value = true
-}
-async function confirmarEliminar() {
-  if (!eliminarId.value) return
-  eliminando.value = true
+async function alternarActivo(item: RubroAdmin) {
   try {
-    await adminApi.eliminarRubro(eliminarId.value)
-    eliminarAbierto.value = false
-    ui.mostrarSnackbar('Rubro eliminado.', 'success')
+    await adminApi.actualizarRubro(item.rubro_id, { tipo: item.tipo, codigo: item.codigo, nombre: item.nombre, activo: !item.activo })
+    ui.mostrarSnackbar(item.activo ? 'Rubro desactivado.' : 'Rubro activado.', 'success')
     await cargar()
-  } catch (e: unknown) {
-    const error = e as ErrorApi
-    errorEliminar.value = error.response?.data?.mensaje ?? 'No se pudo eliminar.'
-  } finally {
-    eliminando.value = false
+  } catch {
+    // El snackbar global ya informa el error.
   }
 }
 </script>
@@ -116,8 +109,16 @@ async function confirmarEliminar() {
           <td>{{ item.codigo }}</td>
           <td>{{ item.nombre }}</td>
           <td>
+            <v-switch
+              :model-value="item.activo"
+              color="primary"
+              density="compact"
+              hide-details
+              @update:model-value="alternarActivo(item)"
+            />
+          </td>
+          <td>
             <v-btn variant="text" size="small" @click="abrirEditar(item)">Editar</v-btn>
-            <v-btn variant="text" size="small" color="error" @click="pedirEliminar(item.rubro_id)">Eliminar</v-btn>
           </td>
         </tr>
       </tbody>
@@ -127,33 +128,39 @@ async function confirmarEliminar() {
       <v-card>
         <v-card-title class="text-titulo">{{ editando ? 'Editar rubro' : 'Nuevo rubro' }}</v-card-title>
         <v-card-text>
-          <v-select
-            v-model="form.tipo"
-            :items="[
-              { title: 'Bien', value: 'BIEN' },
-              { title: 'Servicio', value: 'SERVICIO' },
-            ]"
-            label="Tipo"
-            class="mb-2"
-          />
-          <v-text-field v-model="form.codigo" label="Código" :error-messages="erroresCampo.codigo" class="mb-2" />
-          <v-text-field v-model="form.nombre" label="Nombre" :error-messages="erroresCampo.nombre" />
+          <v-form v-model="formValido">
+            <v-select
+              v-model="form.tipo"
+              :items="[
+                { title: 'Bien', value: 'BIEN' },
+                { title: 'Servicio', value: 'SERVICIO' },
+              ]"
+              label="Tipo"
+              class="mb-2"
+            />
+            <v-text-field
+              v-model="form.codigo"
+              label="Código"
+              :maxlength="20"
+              :rules="[requerido()]"
+              :error-messages="erroresCampo.codigo"
+              class="mb-2"
+            />
+            <v-text-field
+              v-model="form.nombre"
+              label="Nombre"
+              :maxlength="100"
+              :rules="[requerido()]"
+              :error-messages="erroresCampo.nombre"
+            />
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="abierto = false">Cancelar</v-btn>
-          <v-btn :loading="guardando" @click="guardar">Guardar</v-btn>
+          <v-btn color="primary" :loading="guardando" :disabled="!formValido" @click="guardar">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <BaseConfirmacion
-      v-model:abierto="eliminarAbierto"
-      titulo="Eliminar rubro"
-      :mensaje="`Esta acción no se puede deshacer. ${errorEliminar}`"
-      texto-confirmar="Eliminar"
-      :cargando="eliminando"
-      @confirmar="confirmarEliminar"
-    />
   </div>
 </template>

@@ -42,14 +42,15 @@ export const adminApi = {
   reactivarProveedor: (id: number) => cliente.post<never, null>(`/admin/proveedores/${id}/reactivar`),
   suspenderProveedor: (id: number) => cliente.post<never, null>(`/admin/proveedores/${id}/suspender`),
 
-  // I3 — Roles y permisos (05C hardening: crear/eliminar rol custom, módulo propio)
+  // I3 — Roles y permisos (05C hardening: crear rol custom + activar/desactivar, módulo propio)
   roles: () => cliente.get<never, RolConPermisos[]>('/admin/roles'),
   permisos: () => cliente.get<never, PermisoItem[]>('/admin/permisos'),
   crearRol: (nombre: string, permisos: string[]) =>
     cliente.post<never, RolConPermisos>('/admin/roles', { nombre, permisos }),
   actualizarPermisosRol: (rol: string, permisos: string[]) =>
     cliente.put<never, RolConPermisos>(`/admin/roles/${rol}/permisos`, { permisos }),
-  eliminarRol: (rol: string) => cliente.delete<never, null>(`/admin/roles/${rol}`),
+  activarRol: (rol: string) => cliente.post<never, RolConPermisos>(`/admin/roles/${rol}/activar`),
+  desactivarRol: (rol: string) => cliente.post<never, RolConPermisos>(`/admin/roles/${rol}/desactivar`),
 
   // I4 — Configuración y UIT
   configuracion: () => cliente.get<never, ConfiguracionItem[]>('/admin/configuracion'),
@@ -65,24 +66,20 @@ export const adminApi = {
   rubros: () => cliente.get<never, RubroAdmin[]>('/admin/rubros'),
   crearRubro: (body: RubroInput) => cliente.post<never, { rubro_id: number }>('/admin/rubros', body),
   actualizarRubro: (id: number, body: RubroInput) => cliente.put<never, null>(`/admin/rubros/${id}`, body),
-  eliminarRubro: (id: number) => cliente.delete<never, null>(`/admin/rubros/${id}`),
 
   unidadesMedida: () => cliente.get<never, UnidadMedidaAdmin[]>('/admin/unidades-medida'),
   crearUnidadMedida: (body: UnidadMedidaInput) =>
     cliente.post<never, { unidad_medida_id: number }>('/admin/unidades-medida', body),
   actualizarUnidadMedida: (id: number, body: UnidadMedidaInput) =>
     cliente.put<never, null>(`/admin/unidades-medida/${id}`, body),
-  eliminarUnidadMedida: (id: number) => cliente.delete<never, null>(`/admin/unidades-medida/${id}`),
 
   tiposComprobante: () => cliente.get<never, TipoComprobanteAdmin[]>('/admin/tipos-comprobante'),
   crearTipoComprobante: (body: TipoComprobanteInput) =>
     cliente.post<never, { tipo_comprobante_id: number }>('/admin/tipos-comprobante', body),
   actualizarTipoComprobante: (id: number, body: TipoComprobanteInput) =>
     cliente.put<never, null>(`/admin/tipos-comprobante/${id}`, body),
-  eliminarTipoComprobante: (id: number) => cliente.delete<never, null>(`/admin/tipos-comprobante/${id}`),
 
   estados: () => cliente.get<never, EstadoAdmin[]>('/admin/estados'),
   crearEstado: (body: EstadoInput) => cliente.post<never, { estado_id: number }>('/admin/estados', body),
   actualizarEstado: (id: number, body: EstadoInput) => cliente.put<never, null>(`/admin/estados/${id}`, body),
-  eliminarEstado: (id: number) => cliente.delete<never, null>(`/admin/estados/${id}`),
 }

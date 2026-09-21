@@ -32,6 +32,23 @@ code {
   outline-offset: 2px;
 }
 
+/* `v-switch` "apagado" (activo/inactivo, usado en Áreas/Roles y Permisos/los
+   4 catálogos de Configuración) se volvía casi invisible en los dos temas
+   (05C hardening, pedido explícitamente por el usuario — afecta a TODOS los
+   switches del proyecto a propósito): Vuetify pinta el track sin marcar con
+   `surface-variant` a 60% de opacidad, pero en este tema `surface-variant`
+   es casi idéntico a `surface`/`background` a propósito (superficies
+   sutiles, ver nota de VStepperItem más abajo) — la combinación dejaba el
+   "off" sin contraste real contra el fondo. Se fuerza el mismo token `grey`
+   que ya usan los chips de estado (BORRADOR/NO_ADJUDICADA) a opacidad alta;
+   el thumb no se toca (su `surface-bright` por defecto ya contrasta bien
+   contra un track gris real). Se excluye `--dirty` (encendido) para no tocar
+   el `color="primary"` que ya se ve bien. */
+.v-switch .v-selection-control:not(.v-selection-control--dirty) .v-switch__track {
+  background-color: rgb(var(--v-theme-grey));
+  opacity: 0.8;
+}
+
 /* Vuetify's VStepperItem pinta el avatar del paso activo/completado con
    `surface-variant` (M3 por defecto), y en este tema `surface-variant` es
    casi idéntico a `surface`/`background` (05D lo define así a propósito para

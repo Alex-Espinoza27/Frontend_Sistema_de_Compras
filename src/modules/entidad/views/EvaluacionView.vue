@@ -7,6 +7,7 @@ import { useRoute } from 'vue-router'
 
 import { evaluacionApi } from '@/api/evaluacion.api'
 import BaseVolver from '@/components/base/BaseVolver.vue'
+import { useListado } from '@/composables/useListado'
 import ModalEvaluarOferta from '@/modules/entidad/components/ModalEvaluarOferta.vue'
 import type { CuadroComparativoRespuesta, OfertaEvaluacionItem } from '@/modules/entidad/entidad.types'
 import dayjs from '@/plugins/dayjs'
@@ -14,29 +15,35 @@ import dayjs from '@/plugins/dayjs'
 const route = useRoute()
 const convocatoriaId = Number(route.params.id)
 
-const cargando = ref(true)
+// Ofertas: paginado (05C hardening, pedido explícitamente por el usuario —
+// una convocatoria puede recibir más de 100 ofertas, no se cargan todas de
+// un golpe). El cuadro comparativo se sigue cargando aparte, sin paginar
+// (solo resume las aprobadas para decidir a quién recomendar).
+const {
+  items: ofertas,
+  paginacion,
+  cargando,
+  params,
+  recargar,
+} = useListado<OfertaEvaluacionItem>((p) => evaluacionApi.ofertas(convocatoriaId, p), { por_pagina: 15 })
+
 const errorCarga = ref('')
-const ofertas = ref<OfertaEvaluacionItem[]>([])
 const cuadro = ref<CuadroComparativoRespuesta | null>(null)
 
-async function cargar() {
-  cargando.value = true
-  errorCarga.value = ''
+async function cargarCuadro() {
   try {
-    const [ofertasData, cuadroData] = await Promise.all([
-      evaluacionApi.ofertas(convocatoriaId),
-      evaluacionApi.cuadroComparativo(convocatoriaId),
-    ])
-    ofertas.value = ofertasData.items
-    cuadro.value = cuadroData
+    cuadro.value = await evaluacionApi.cuadroComparativo(convocatoriaId)
   } catch (e: unknown) {
     const error = e as { response?: { data?: { mensaje?: string | null } } }
     errorCarga.value = error.response?.data?.mensaje ?? 'No se pudo cargar la evaluación.'
-  } finally {
-    cargando.value = false
   }
 }
-cargar()
+cargarCuadro()
+
+function alGuardarEvaluacion() {
+  recargar()
+  cargarCuadro()
+}
 
 function colorCompuerta(valor: string | null) {
   if (valor === 'APROBADO') return 'success'
@@ -90,28 +97,39 @@ function abrirModal(ofertaId: number) {
               <td><v-chip size="small" :color="colorCompuerta(oferta.eval_logistica)" variant="tonal">{{ oferta.eval_logistica ?? 'Pendiente' }}</v-chip></td>
               <td><v-chip size="small" :color="oferta.estado.color" variant="tonal">{{ oferta.estado.codigo }}</v-chip></td>
               <td>{{ dayjs(oferta.fecha_envio).tz().format('DD/MM/YYYY HH:mm') }}</td>
-              <td><v-btn v-can="'evaluacion.evaluar'" variant="text" size="small" @click="abrirModal(oferta.oferta_id)">Evaluar</v-btn></td>
+              <td>
+                <v-btn
+                  v-can="'evaluacion.evaluar'"
+                  variant="tonal"
+                  color="primary"
+                  size="small"
+                  @click="abrirModal(oferta.oferta_id)"
+                >
+                  Evaluar
+                </v-btn>
+              </td>
             </tr>
           </tbody>
         </v-table>
         <div v-if="!ofertas.length" class="text-center py-8 text-grey">No hay ofertas para esta convocatoria.</div>
+
+        <div v-if="paginacion.ultima_pagina > 1" class="d-flex justify-center mt-4">
+          <v-pagination
+            v-model="params.pagina"
+            :length="paginacion.ultima_pagina"
+            density="comfortable"
+            show-first-last-page
+            :total-visible="5"
+          />
+        </div>
       </v-card>
 
+      <!-- Solo informativo: la decisión de adjudicar/declarar desierta vive
+           en el módulo Adjudicación (05C hardening, pedido explícitamente
+           por el usuario) — aquí ya no hay acción, solo se deja ver quién
+           va ganando. -->
       <v-card v-if="cuadro" class="pa-4">
-        <div class="d-flex justify-space-between align-center mb-3">
-          <div class="text-subtitle-1 text-titulo">Cuadro comparativo</div>
-          <v-btn
-            v-can="'adjudicacion.adjudicar'"
-            :to="`/app/convocatorias/${convocatoriaId}/adjudicacion`"
-            :disabled="!cuadro.puede_adjudicar"
-            color="primary"
-          >
-            Adjudicar
-          </v-btn>
-        </div>
-        <v-alert v-if="!cuadro.puede_adjudicar" type="info" density="compact" class="mb-4">
-          Solo se puede adjudicar cuando todas las ofertas están evaluadas y hay al menos una aprobada.
-        </v-alert>
+        <div class="text-subtitle-1 text-titulo mb-3">Cuadro comparativo</div>
         <v-table density="comfortable">
           <thead>
             <tr>
@@ -137,6 +155,6 @@ function abrirModal(ofertaId: number) {
       </v-card>
     </template>
 
-    <ModalEvaluarOferta v-model:abierto="modalAbierto" :oferta-id="ofertaSeleccionada" @guardado="cargar" />
+    <ModalEvaluarOferta v-model:abierto="modalAbierto" :oferta-id="ofertaSeleccionada" @guardado="alGuardarEvaluacion" />
   </v-container>
 </template>

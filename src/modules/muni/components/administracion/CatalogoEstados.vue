@@ -3,14 +3,21 @@
 // (string libre max:20), pero solo estos 6 valores existen como color de
 // tema en Vuetify (05D §2.3 / types/api.ts `ColorEstado`) — cualquier otro
 // rompería BaseChipEstado en toda la app, así que se restringe aquí.
+//
+// "Eliminar" no existe (05C hardening, pedido explícitamente por el
+// usuario): se desactiva en vez de borrarse — mismo patrón que
+// `AreasView.vue`. A diferencia de Rubros/Unidades/Tipos de comprobante, un
+// estado no tiene ningún "picker" de usuario final (se asignan por
+// transiciones de negocio, nunca se eligen de una lista) — desactivar es
+// solo una bandera administrativa, sin filtrado adicional que aplicar.
 import { reactive, ref } from 'vue'
 
 import { adminApi } from '@/api/admin.api'
 import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
-import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import type { ContextoEstado, EstadoAdmin } from '@/modules/muni/muni.types'
 import type { ColorEstado } from '@/types/api'
 import { useUiStore } from '@/stores/ui.store'
+import { requerido } from '@/utils/validaciones'
 
 interface ErrorApi {
   response?: { status?: number; data?: { mensaje?: string | null; errores?: Record<string, string[]> } }
@@ -35,6 +42,7 @@ const opcionesContexto: { title: string; value: ContextoEstado }[] = [
 const opcionesColor: ColorEstado[] = ['info', 'success', 'warning', 'error', 'grey', 'primary']
 
 const abierto = ref(false)
+const formValido = ref(false)
 const editando = ref<EstadoAdmin | null>(null)
 const form = reactive({
   contexto: 'CONVOCATORIA' as ContextoEstado,
@@ -67,14 +75,15 @@ function abrirEditar(item: EstadoAdmin) {
   abierto.value = true
 }
 async function guardar() {
+  if (!formValido.value) return
   guardando.value = true
   erroresCampo.value = {}
   try {
     if (editando.value) {
-      await adminApi.actualizarEstado(editando.value.estado_id, { ...form })
+      await adminApi.actualizarEstado(editando.value.estado_id, { ...form, activo: editando.value.activo })
       ui.mostrarSnackbar('Estado actualizado.', 'success')
     } else {
-      await adminApi.crearEstado({ ...form })
+      await adminApi.crearEstado({ ...form, activo: true })
       ui.mostrarSnackbar('Estado creado.', 'success')
     }
     abierto.value = false
@@ -87,28 +96,20 @@ async function guardar() {
   }
 }
 
-const eliminarAbierto = ref(false)
-const eliminarId = ref<number | null>(null)
-const eliminando = ref(false)
-const errorEliminar = ref('')
-function pedirEliminar(id: number) {
-  eliminarId.value = id
-  errorEliminar.value = ''
-  eliminarAbierto.value = true
-}
-async function confirmarEliminar() {
-  if (!eliminarId.value) return
-  eliminando.value = true
+async function alternarActivo(item: EstadoAdmin) {
   try {
-    await adminApi.eliminarEstado(eliminarId.value)
-    eliminarAbierto.value = false
-    ui.mostrarSnackbar('Estado eliminado.', 'success')
+    await adminApi.actualizarEstado(item.estado_id, {
+      contexto: item.contexto,
+      codigo: item.codigo,
+      nombre: item.nombre,
+      color: item.color as ColorEstado,
+      orden: item.orden,
+      activo: !item.activo,
+    })
+    ui.mostrarSnackbar(item.activo ? 'Estado desactivado.' : 'Estado activado.', 'success')
     await cargar()
-  } catch (e: unknown) {
-    const error = e as ErrorApi
-    errorEliminar.value = error.response?.data?.mensaje ?? 'No se pudo eliminar.'
-  } finally {
-    eliminando.value = false
+  } catch {
+    // El snackbar global ya informa el error.
   }
 }
 </script>
@@ -128,6 +129,7 @@ async function confirmarEliminar() {
           <th>Nombre</th>
           <th>Color</th>
           <th>Orden</th>
+          <th>Estado</th>
           <th></th>
         </tr>
       </thead>
@@ -139,8 +141,16 @@ async function confirmarEliminar() {
           <td><BaseChipEstado :estado="{ codigo: item.codigo, nombre: item.nombre, color: item.color as ColorEstado }" /></td>
           <td>{{ item.orden }}</td>
           <td>
+            <v-switch
+              :model-value="item.activo"
+              color="primary"
+              density="compact"
+              hide-details
+              @update:model-value="alternarActivo(item)"
+            />
+          </td>
+          <td>
             <v-btn variant="text" size="small" @click="abrirEditar(item)">Editar</v-btn>
-            <v-btn variant="text" size="small" color="error" @click="pedirEliminar(item.estado_id)">Eliminar</v-btn>
           </td>
         </tr>
       </tbody>
@@ -150,32 +160,40 @@ async function confirmarEliminar() {
       <v-card>
         <v-card-title class="text-titulo">{{ editando ? 'Editar estado' : 'Nuevo estado' }}</v-card-title>
         <v-card-text>
-          <v-select v-model="form.contexto" :items="opcionesContexto" label="Contexto" class="mb-2" />
-          <v-text-field v-model="form.codigo" label="Código" :error-messages="erroresCampo.codigo" class="mb-2" />
-          <v-text-field v-model="form.nombre" label="Nombre" :error-messages="erroresCampo.nombre" class="mb-2" />
-          <v-select v-model="form.color" :items="opcionesColor" label="Color" class="mb-2" />
-          <v-text-field
-            v-model.number="form.orden"
-            label="Orden"
-            type="number"
-            :error-messages="erroresCampo.orden"
-          />
+          <v-form v-model="formValido">
+            <v-select v-model="form.contexto" :items="opcionesContexto" label="Contexto" class="mb-2" />
+            <v-text-field
+              v-model="form.codigo"
+              label="Código"
+              :maxlength="20"
+              :rules="[requerido()]"
+              :error-messages="erroresCampo.codigo"
+              class="mb-2"
+            />
+            <v-text-field
+              v-model="form.nombre"
+              label="Nombre"
+              :maxlength="60"
+              :rules="[requerido()]"
+              :error-messages="erroresCampo.nombre"
+              class="mb-2"
+            />
+            <v-select v-model="form.color" :items="opcionesColor" label="Color" :rules="[requerido()]" class="mb-2" />
+            <v-text-field
+              v-model.number="form.orden"
+              label="Orden"
+              type="number"
+              :rules="[requerido()]"
+              :error-messages="erroresCampo.orden"
+            />
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="abierto = false">Cancelar</v-btn>
-          <v-btn :loading="guardando" @click="guardar">Guardar</v-btn>
+          <v-btn color="primary" :loading="guardando" :disabled="!formValido" @click="guardar">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <BaseConfirmacion
-      v-model:abierto="eliminarAbierto"
-      titulo="Eliminar estado"
-      :mensaje="`Esta acción no se puede deshacer. ${errorEliminar}`"
-      texto-confirmar="Eliminar"
-      :cargando="eliminando"
-      @confirmar="confirmarEliminar"
-    />
   </div>
 </template>

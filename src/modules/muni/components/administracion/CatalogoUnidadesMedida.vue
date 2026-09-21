@@ -1,11 +1,14 @@
 <script setup lang="ts">
-// I5 — Catálogo de unidades de medida (05B).
+// I5 — Catálogo de unidades de medida (05B). "Eliminar" no existe (05C
+// hardening, pedido explícitamente por el usuario): se desactiva en vez de
+// borrarse — mismo patrón que `AreasView.vue`. Una unidad inactiva deja de
+// ofrecerse en la sub-tabla de ítems de requerimientos nuevos.
 import { reactive, ref } from 'vue'
 
 import { adminApi } from '@/api/admin.api'
-import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import type { UnidadMedidaAdmin } from '@/modules/muni/muni.types'
 import { useUiStore } from '@/stores/ui.store'
+import { requerido } from '@/utils/validaciones'
 
 interface ErrorApi {
   response?: { status?: number; data?: { mensaje?: string | null; errores?: Record<string, string[]> } }
@@ -21,7 +24,15 @@ async function cargar() {
 }
 cargar()
 
+const cabeceras = [
+  { title: 'Código', key: 'codigo' },
+  { title: 'Nombre', key: 'nombre' },
+  { title: 'Estado', key: 'activo' },
+  { title: '', key: 'acciones', sortable: false },
+]
+
 const abierto = ref(false)
+const formValido = ref(false)
 const editando = ref<UnidadMedidaAdmin | null>(null)
 const form = reactive({ codigo: '', nombre: '' })
 const guardando = ref(false)
@@ -42,14 +53,15 @@ function abrirEditar(item: UnidadMedidaAdmin) {
   abierto.value = true
 }
 async function guardar() {
+  if (!formValido.value) return
   guardando.value = true
   erroresCampo.value = {}
   try {
     if (editando.value) {
-      await adminApi.actualizarUnidadMedida(editando.value.unidad_medida_id, { ...form })
+      await adminApi.actualizarUnidadMedida(editando.value.unidad_medida_id, { ...form, activo: editando.value.activo })
       ui.mostrarSnackbar('Unidad de medida actualizada.', 'success')
     } else {
-      await adminApi.crearUnidadMedida({ ...form })
+      await adminApi.crearUnidadMedida({ ...form, activo: true })
       ui.mostrarSnackbar('Unidad de medida creada.', 'success')
     }
     abierto.value = false
@@ -62,28 +74,13 @@ async function guardar() {
   }
 }
 
-const eliminarAbierto = ref(false)
-const eliminarId = ref<number | null>(null)
-const eliminando = ref(false)
-const errorEliminar = ref('')
-function pedirEliminar(id: number) {
-  eliminarId.value = id
-  errorEliminar.value = ''
-  eliminarAbierto.value = true
-}
-async function confirmarEliminar() {
-  if (!eliminarId.value) return
-  eliminando.value = true
+async function alternarActivo(item: UnidadMedidaAdmin) {
   try {
-    await adminApi.eliminarUnidadMedida(eliminarId.value)
-    eliminarAbierto.value = false
-    ui.mostrarSnackbar('Unidad de medida eliminada.', 'success')
+    await adminApi.actualizarUnidadMedida(item.unidad_medida_id, { codigo: item.codigo, nombre: item.nombre, activo: !item.activo })
+    ui.mostrarSnackbar(item.activo ? 'Unidad de medida desactivada.' : 'Unidad de medida activada.', 'success')
     await cargar()
-  } catch (e: unknown) {
-    const error = e as ErrorApi
-    errorEliminar.value = error.response?.data?.mensaje ?? 'No se pudo eliminar.'
-  } finally {
-    eliminando.value = false
+  } catch {
+    // El snackbar global ya informa el error.
   }
 }
 </script>
@@ -98,9 +95,7 @@ async function confirmarEliminar() {
     <v-table v-else density="comfortable">
       <thead>
         <tr>
-          <th>Código</th>
-          <th>Nombre</th>
-          <th></th>
+          <th v-for="c in cabeceras" :key="c.key">{{ c.title }}</th>
         </tr>
       </thead>
       <tbody>
@@ -108,10 +103,16 @@ async function confirmarEliminar() {
           <td>{{ item.codigo }}</td>
           <td>{{ item.nombre }}</td>
           <td>
+            <v-switch
+              :model-value="item.activo"
+              color="primary"
+              density="compact"
+              hide-details
+              @update:model-value="alternarActivo(item)"
+            />
+          </td>
+          <td>
             <v-btn variant="text" size="small" @click="abrirEditar(item)">Editar</v-btn>
-            <v-btn variant="text" size="small" color="error" @click="pedirEliminar(item.unidad_medida_id)">
-              Eliminar
-            </v-btn>
           </td>
         </tr>
       </tbody>
@@ -121,24 +122,30 @@ async function confirmarEliminar() {
       <v-card>
         <v-card-title class="text-titulo">{{ editando ? 'Editar unidad' : 'Nueva unidad' }}</v-card-title>
         <v-card-text>
-          <v-text-field v-model="form.codigo" label="Código" :error-messages="erroresCampo.codigo" class="mb-2" />
-          <v-text-field v-model="form.nombre" label="Nombre" :error-messages="erroresCampo.nombre" />
+          <v-form v-model="formValido">
+            <v-text-field
+              v-model="form.codigo"
+              label="Código"
+              :maxlength="20"
+              :rules="[requerido()]"
+              :error-messages="erroresCampo.codigo"
+              class="mb-2"
+            />
+            <v-text-field
+              v-model="form.nombre"
+              label="Nombre"
+              :maxlength="60"
+              :rules="[requerido()]"
+              :error-messages="erroresCampo.nombre"
+            />
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="abierto = false">Cancelar</v-btn>
-          <v-btn :loading="guardando" @click="guardar">Guardar</v-btn>
+          <v-btn color="primary" :loading="guardando" :disabled="!formValido" @click="guardar">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <BaseConfirmacion
-      v-model:abierto="eliminarAbierto"
-      titulo="Eliminar unidad de medida"
-      :mensaje="`Esta acción no se puede deshacer. ${errorEliminar}`"
-      texto-confirmar="Eliminar"
-      :cargando="eliminando"
-      @confirmar="confirmarEliminar"
-    />
   </div>
 </template>

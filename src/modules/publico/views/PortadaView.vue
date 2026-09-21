@@ -70,10 +70,10 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
   <div v-else>
     <section class="hero py-12 px-4">
       <v-container>
-        <div class="text-h4 text-titulo mb-2">Compras La Perla</div>
+        <div class="text-h4 text-titulo mb-2">Compras San Isidro</div>
         <div class="text-body-1 text-grey mb-8" style="max-width: 640px">
           Consulta las contrataciones de bienes y servicios (hasta 8 UIT) de la Municipalidad
-          Distrital de La Perla y de las demás entidades públicas y privadas registradas en la plataforma.
+          Distrital de San Isidro y de las demás entidades públicas y privadas registradas en la plataforma.
         </div>
 
         <div class="d-flex flex-wrap ga-4 mb-2">

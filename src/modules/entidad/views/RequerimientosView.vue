@@ -7,6 +7,7 @@ import { entidadesApi } from '@/api/entidades.api'
 import { publicoApi } from '@/api/publico.api'
 import { requerimientosApi } from '@/api/requerimientos.api'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
+import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useListado } from '@/composables/useListado'
 import type { RequerimientoListaItem } from '@/modules/entidad/entidad.types'
@@ -15,6 +16,7 @@ import type { RubroPublico } from '@/modules/publico/publico.types'
 import dayjs from '@/plugins/dayjs'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
+import { hoyTexto } from '@/utils/fechas'
 
 const ui = useUiStore()
 const auth = useAuthStore()
@@ -31,9 +33,10 @@ if (!esEntidad) {
 
 // Orden por defecto: más recientes primero (05C hardening, pedido
 // explícitamente por el usuario — antes no había ninguna columna de fecha).
+// El filtro de fecha (nuevo, 05C hardening) arranca marcado en "Hoy".
 const { items, paginacion, cargando, params, recargar } = useListado<RequerimientoListaItem>(
   requerimientosApi.index,
-  { ordenar_por: 'fecha_creacion', direccion: 'desc' },
+  { ordenar_por: 'fecha_creacion', direccion: 'desc', desde: hoyTexto(), hasta: hoyTexto() },
 )
 
 // `sortable` refleja exactamente lo que soporta el backend
@@ -139,6 +142,13 @@ async function confirmarEliminar() {
         clearable
         style="max-width: 240px"
         @update:model-value="recargar()"
+      />
+      <BaseRangoFechas
+        v-model:desde="params.desde as string"
+        v-model:hasta="params.hasta as string"
+        label="Fecha de creación"
+        style="max-width: 260px"
+        @aplicar="recargar()"
       />
     </div>
 

@@ -23,7 +23,7 @@ import { useTheme } from 'vuetify'
 
 import { dashboardApi } from '@/api/dashboard.api'
 import { entidadesApi } from '@/api/entidades.api'
-import BaseDatePicker from '@/components/base/BaseDatePicker.vue'
+import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import type { DashboardDatos } from '@/modules/transversales/transversales.types'
 import type { EntidadListaItem } from '@/modules/muni/muni.types'
 import { useAuthStore } from '@/stores/auth.store'
@@ -235,19 +235,12 @@ const graficoMisRubros = computed(() => ({
     <div class="text-h5 text-titulo mb-6">Dashboard</div>
 
     <div class="d-flex flex-wrap ga-4 mb-6">
-      <BaseDatePicker
-        v-model="filtros.desde"
-        label="Desde"
-        clearable
-        style="max-width: 180px"
-        @update:model-value="cargar"
-      />
-      <BaseDatePicker
-        v-model="filtros.hasta"
-        label="Hasta"
-        clearable
-        style="max-width: 180px"
-        @update:model-value="cargar"
+      <BaseRangoFechas
+        v-model:desde="filtros.desde"
+        v-model:hasta="filtros.hasta"
+        label="Rango de fechas"
+        style="max-width: 260px"
+        @aplicar="cargar"
       />
       <v-select
         v-if="esAdminOAuditor"

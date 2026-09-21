@@ -1,20 +1,27 @@
 <script setup lang="ts">
 // J3 — Auditoría (05B). Tabla de solo lectura + detalle con visor JSON
-// monoespaciado (antes/después). `modulo`/`tabla` son texto libre en el
-// backend (sin catálogo) — se ofrecen los módulos conocidos como sugerencia
-// vía combobox, pero el usuario puede escribir cualquier otro valor.
-import { computed, ref } from 'vue'
+// monoespaciado (antes/después). "Módulo" es texto libre en el backend (sin
+// catálogo/enum), pero en la práctica `AuditoriaService::registrar()` solo
+// se llama con estos 9 valores literales en todo el código (05C hardening:
+// antes era un combobox de texto libre — se cambió a `v-select`, mismo
+// formato que el resto de filtros, con la lista completa y real).
+import { ref } from 'vue'
 
 import { auditoriaApi } from '@/api/auditoria.api'
-import BaseDatePicker from '@/components/base/BaseDatePicker.vue'
+import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useDescarga } from '@/composables/useDescarga'
 import { useListado } from '@/composables/useListado'
 import dayjs from '@/plugins/dayjs'
 import type { AuditoriaDetalle, AuditoriaListaItem } from '@/modules/transversales/transversales.types'
+import { hoyTexto } from '@/utils/fechas'
 
+// El filtro de fecha arranca marcado en "Hoy" (05C hardening, pedido
+// explícitamente por el usuario).
 const { items, paginacion, cargando, params, recargar } = useListado<AuditoriaListaItem>(auditoriaApi.index, {
   direccion: 'desc',
+  desde: hoyTexto(),
+  hasta: hoyTexto(),
 })
 
 const opcionesAccion = [
@@ -28,25 +35,17 @@ const opcionesAccion = [
   { title: 'Desierta', value: 'DESIERTA' },
   { title: 'Cancelar', value: 'CANCELAR' },
 ]
-const modulosConocidos = [
-  'REQUERIMIENTOS',
-  'CONVOCATORIAS',
-  'OFERTAS',
-  'EVALUACION',
+const opcionesModulo = [
+  'ADMINISTRACION',
   'ADJUDICACION',
-  'ENTIDADES',
-  'PROVEEDORES',
   'AUTENTICACION',
+  'CONVOCATORIAS',
+  'ENTIDADES',
+  'EVALUACION',
+  'OFERTAS',
+  'PROVEEDORES',
+  'REQUERIMIENTOS',
 ]
-
-// ListadoParams tipa cada filtro ad-hoc como `unknown`; v-combobox exige
-// `string | null` en su v-model (a diferencia de v-select, más laxo).
-const moduloFiltro = computed<string | null>({
-  get: () => (params.modulo as string | undefined) ?? null,
-  set: (valor) => {
-    params.modulo = valor ?? undefined
-  },
-})
 
 // `AuditoriaController::index` siempre ordena por AUDI_FECHA (no lee
 // ordenar_por, 05C hardening); solo "Fecha" es realmente ordenable — el
@@ -74,7 +73,7 @@ async function verDetalle(id: number) {
   }
 }
 
-const { descargar } = useDescarga()
+const { descargar, cargando: exportando } = useDescarga()
 function exportar() {
   descargar(auditoriaApi.exportarXlsxUrl({ ...params }), 'auditoria.xlsx')
 }
@@ -84,7 +83,15 @@ function exportar() {
   <v-container class="py-8" fluid>
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Auditoría</div>
-      <v-btn variant="tonal" prepend-icon="mdi-file-excel-outline" @click="exportar">Excel</v-btn>
+      <v-btn
+        variant="tonal"
+        prepend-icon="mdi-file-excel-outline"
+        :loading="exportando"
+        :disabled="exportando"
+        @click="exportar"
+      >
+        Excel
+      </v-btn>
     </div>
 
     <div class="d-flex flex-wrap ga-4 mb-4">
@@ -92,16 +99,22 @@ function exportar() {
         v-model="params.buscar"
         label="Buscar por endpoint o módulo"
         prepend-inner-icon="mdi-magnify"
-        style="max-width: 260px"
         clearable
+        style="max-width: 260px"
       />
-      <v-combobox
-        v-model="moduloFiltro"
-        :items="modulosConocidos"
+      <v-select
+        v-model="params.modulo as string"
+        :items="opcionesModulo"
         label="Módulo"
         clearable
         style="max-width: 200px"
         @update:model-value="recargar()"
+      />
+      <BaseRangoFechas
+        v-model:desde="params.desde as string"
+        v-model:hasta="params.hasta as string"
+        style="max-width: 260px"
+        @aplicar="recargar()"
       />
       <v-select
         v-model="params.accion"
@@ -114,24 +127,16 @@ function exportar() {
       <v-text-field
         v-model="params.tabla"
         label="Tabla"
+        clearable
         style="max-width: 160px"
         @update:model-value="recargar()"
       />
-      <BaseDatePicker
-        v-model="params.desde as string"
-        label="Desde"
-        clearable
-        style="max-width: 180px"
-        @update:model-value="recargar()"
-      />
-      <BaseDatePicker
-        v-model="params.hasta as string"
-        label="Hasta"
-        clearable
-        style="max-width: 180px"
-        @update:model-value="recargar()"
-      />
     </div>
+
+    <v-overlay :model-value="exportando" persistent class="align-center justify-center">
+      <v-progress-circular indeterminate size="64" color="primary" />
+      <div class="text-body-2 mt-4 text-center">Generando archivo, no cierres esta pantalla…</div>
+    </v-overlay>
 
     <BaseTablaServidor
       v-model:page="params.pagina"

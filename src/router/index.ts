@@ -221,6 +221,15 @@ const router = createRouter({
           component: () => import('@/modules/muni/views/RolesPermisosView.vue'),
         },
         {
+          // Detalle de permisos de un rol (05C hardening, pedido
+          // explícitamente por el usuario): antes vivía inline en la misma
+          // pantalla que la lista de roles.
+          path: 'roles-permisos/:rol',
+          name: 'roles-permisos-detalle',
+          meta: { permiso: 'roles_permisos.ver' },
+          component: () => import('@/modules/muni/views/RolPermisosDetalleView.vue'),
+        },
+        {
           path: 'usuarios',
           name: 'usuarios',
           meta: { permiso: 'gestion_usuarios.ver' },

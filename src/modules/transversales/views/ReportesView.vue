@@ -21,7 +21,7 @@ import { areasApi } from '@/api/areas.api'
 import { entidadesApi } from '@/api/entidades.api'
 import { publicoApi } from '@/api/publico.api'
 import { reportesApi } from '@/api/reportes.api'
-import BaseDatePicker from '@/components/base/BaseDatePicker.vue'
+import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useDescarga } from '@/composables/useDescarga'
 import type { AreaItem } from '@/modules/entidad/entidad.types'
@@ -266,7 +266,7 @@ watch(
 )
 watch([pagina, porPagina], buscar)
 
-const { descargar, abrirEnNuevaPestana } = useDescarga()
+const { descargar, abrirEnNuevaPestana, cargando: exportando } = useDescarga()
 function exportarExcel() {
   descargar(reportesApi.exportarXlsxUrl(filtrosActuales()), `reporte-${tipo.value.toLowerCase()}.xlsx`)
 }
@@ -298,15 +298,30 @@ function filtrosActuales() {
           <v-icon icon="mdi-refresh" />
           <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
         </v-btn>
-        <v-btn variant="tonal" prepend-icon="mdi-file-excel-outline" @click="exportarExcel">Excel</v-btn>
-        <v-btn variant="tonal" prepend-icon="mdi-file-pdf-box" @click="exportarPdf">PDF</v-btn>
+        <v-btn
+          variant="tonal"
+          prepend-icon="mdi-file-excel-outline"
+          :loading="exportando"
+          :disabled="exportando"
+          @click="exportarExcel"
+        >
+          Excel
+        </v-btn>
+        <v-btn
+          variant="tonal"
+          prepend-icon="mdi-file-pdf-box"
+          :loading="exportando"
+          :disabled="exportando"
+          @click="exportarPdf"
+        >
+          PDF
+        </v-btn>
       </div>
     </div>
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-select v-model="tipo" :items="opcionesTipo" label="Tipo de reporte" style="max-width: 200px" />
-      <BaseDatePicker v-model="filtros.desde" label="Desde" clearable style="max-width: 180px" @update:model-value="buscar" />
-      <BaseDatePicker v-model="filtros.hasta" label="Hasta" clearable style="max-width: 180px" @update:model-value="buscar" />
+      <BaseRangoFechas v-model:desde="filtros.desde" v-model:hasta="filtros.hasta" style="max-width: 260px" @aplicar="buscar" />
       <v-select
         v-if="!esEntidad"
         v-model="filtros.entidad_id"
@@ -403,5 +418,10 @@ function filtrosActuales() {
       :item-value="pageId"
       mensaje-vacio="No hay resultados para estos filtros."
     />
+
+    <v-overlay :model-value="exportando" persistent class="align-center justify-center">
+      <v-progress-circular indeterminate size="64" color="primary" />
+      <div class="text-body-2 mt-4 text-center">Generando archivo, no cierres esta pantalla…</div>
+    </v-overlay>
   </v-container>
 </template>

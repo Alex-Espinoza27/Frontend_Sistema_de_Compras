@@ -5,14 +5,18 @@
 // muestra convocatorias EN_EVALUACION).
 import { presentacionOfertasApi } from '@/api/presentacionOfertas.api'
 import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
+import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useListado } from '@/composables/useListado'
 import type { PresentacionOfertaItem } from '@/modules/entidad/entidad.types'
 import dayjs from '@/plugins/dayjs'
+import { hoyTexto } from '@/utils/fechas'
 
+// El filtro de fecha (nuevo, 05C hardening, sobre OFER_FECHA_ENVIO) arranca
+// marcado en "Hoy".
 const { items, paginacion, cargando, params, recargar } = useListado<PresentacionOfertaItem>(
   presentacionOfertasApi.index,
-  { ordenar_por: 'fecha_envio', direccion: 'desc' },
+  { ordenar_por: 'fecha_envio', direccion: 'desc', desde: hoyTexto(), hasta: hoyTexto() },
 )
 
 const cabeceras = [
@@ -59,6 +63,13 @@ const cabeceras = [
         clearable
         style="max-width: 200px"
         @update:model-value="recargar()"
+      />
+      <BaseRangoFechas
+        v-model:desde="params.desde as string"
+        v-model:hasta="params.hasta as string"
+        label="Fecha de envío"
+        style="max-width: 260px"
+        @aplicar="recargar()"
       />
     </div>
 

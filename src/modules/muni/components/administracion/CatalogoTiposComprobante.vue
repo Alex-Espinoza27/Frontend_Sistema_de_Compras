@@ -1,11 +1,14 @@
 <script setup lang="ts">
-// I5 — Catálogo de tipos de comprobante (05B).
+// I5 — Catálogo de tipos de comprobante (05B). "Eliminar" no existe (05C
+// hardening, pedido explícitamente por el usuario): se desactiva en vez de
+// borrarse — mismo patrón que `AreasView.vue`. Un tipo inactivo deja de
+// ofrecerse en el formulario de postulación (`OfertaController::postulacion`).
 import { reactive, ref } from 'vue'
 
 import { adminApi } from '@/api/admin.api'
-import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import type { TipoComprobanteAdmin } from '@/modules/muni/muni.types'
 import { useUiStore } from '@/stores/ui.store'
+import { requerido } from '@/utils/validaciones'
 
 interface ErrorApi {
   response?: { status?: number; data?: { mensaje?: string | null; errores?: Record<string, string[]> } }
@@ -21,7 +24,16 @@ async function cargar() {
 }
 cargar()
 
+const cabeceras = [
+  { title: 'Código', key: 'codigo' },
+  { title: 'Nombre', key: 'nombre' },
+  { title: 'Incluye IGV', key: 'incluye_igv' },
+  { title: 'Estado', key: 'activo' },
+  { title: '', key: 'acciones', sortable: false },
+]
+
 const abierto = ref(false)
+const formValido = ref(false)
 const editando = ref<TipoComprobanteAdmin | null>(null)
 const form = reactive({ codigo: '', nombre: '', incluye_igv: true })
 const guardando = ref(false)
@@ -44,14 +56,15 @@ function abrirEditar(item: TipoComprobanteAdmin) {
   abierto.value = true
 }
 async function guardar() {
+  if (!formValido.value) return
   guardando.value = true
   erroresCampo.value = {}
   try {
     if (editando.value) {
-      await adminApi.actualizarTipoComprobante(editando.value.tipo_comprobante_id, { ...form })
+      await adminApi.actualizarTipoComprobante(editando.value.tipo_comprobante_id, { ...form, activo: editando.value.activo })
       ui.mostrarSnackbar('Tipo de comprobante actualizado.', 'success')
     } else {
-      await adminApi.crearTipoComprobante({ ...form })
+      await adminApi.crearTipoComprobante({ ...form, activo: true })
       ui.mostrarSnackbar('Tipo de comprobante creado.', 'success')
     }
     abierto.value = false
@@ -64,28 +77,18 @@ async function guardar() {
   }
 }
 
-const eliminarAbierto = ref(false)
-const eliminarId = ref<number | null>(null)
-const eliminando = ref(false)
-const errorEliminar = ref('')
-function pedirEliminar(id: number) {
-  eliminarId.value = id
-  errorEliminar.value = ''
-  eliminarAbierto.value = true
-}
-async function confirmarEliminar() {
-  if (!eliminarId.value) return
-  eliminando.value = true
+async function alternarActivo(item: TipoComprobanteAdmin) {
   try {
-    await adminApi.eliminarTipoComprobante(eliminarId.value)
-    eliminarAbierto.value = false
-    ui.mostrarSnackbar('Tipo de comprobante eliminado.', 'success')
+    await adminApi.actualizarTipoComprobante(item.tipo_comprobante_id, {
+      codigo: item.codigo,
+      nombre: item.nombre,
+      incluye_igv: item.incluye_igv,
+      activo: !item.activo,
+    })
+    ui.mostrarSnackbar(item.activo ? 'Tipo de comprobante desactivado.' : 'Tipo de comprobante activado.', 'success')
     await cargar()
-  } catch (e: unknown) {
-    const error = e as ErrorApi
-    errorEliminar.value = error.response?.data?.mensaje ?? 'No se pudo eliminar.'
-  } finally {
-    eliminando.value = false
+  } catch {
+    // El snackbar global ya informa el error.
   }
 }
 </script>
@@ -100,10 +103,7 @@ async function confirmarEliminar() {
     <v-table v-else density="comfortable">
       <thead>
         <tr>
-          <th>Código</th>
-          <th>Nombre</th>
-          <th>Incluye IGV</th>
-          <th></th>
+          <th v-for="c in cabeceras" :key="c.key">{{ c.title }}</th>
         </tr>
       </thead>
       <tbody>
@@ -112,10 +112,16 @@ async function confirmarEliminar() {
           <td>{{ item.nombre }}</td>
           <td><v-icon v-if="item.incluye_igv" icon="mdi-check" /></td>
           <td>
+            <v-switch
+              :model-value="item.activo"
+              color="primary"
+              density="compact"
+              hide-details
+              @update:model-value="alternarActivo(item)"
+            />
+          </td>
+          <td>
             <v-btn variant="text" size="small" @click="abrirEditar(item)">Editar</v-btn>
-            <v-btn variant="text" size="small" color="error" @click="pedirEliminar(item.tipo_comprobante_id)">
-              Eliminar
-            </v-btn>
           </td>
         </tr>
       </tbody>
@@ -125,25 +131,35 @@ async function confirmarEliminar() {
       <v-card>
         <v-card-title class="text-titulo">{{ editando ? 'Editar tipo' : 'Nuevo tipo' }}</v-card-title>
         <v-card-text>
-          <v-text-field v-model="form.codigo" label="Código" :error-messages="erroresCampo.codigo" class="mb-2" />
-          <v-text-field v-model="form.nombre" label="Nombre" :error-messages="erroresCampo.nombre" class="mb-2" />
-          <v-switch v-model="form.incluye_igv" label="Incluye IGV" hide-details />
+          <v-form v-model="formValido">
+            <v-text-field
+              v-model="form.codigo"
+              label="Código"
+              :maxlength="20"
+              :rules="[requerido()]"
+              :error-messages="erroresCampo.codigo"
+              class="mb-2"
+            />
+            <v-text-field
+              v-model="form.nombre"
+              label="Nombre"
+              :maxlength="60"
+              :rules="[requerido()]"
+              :error-messages="erroresCampo.nombre"
+              class="mb-2"
+            />
+            <!-- Color explícito (05C hardening, pedido explícitamente por el
+                 usuario): sin `color`, el switch encendido/apagado no se
+                 distinguía en ningún tema. -->
+            <v-switch v-model="form.incluye_igv" label="Incluye IGV" color="primary" hide-details />
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="abierto = false">Cancelar</v-btn>
-          <v-btn :loading="guardando" @click="guardar">Guardar</v-btn>
+          <v-btn color="primary" :loading="guardando" :disabled="!formValido" @click="guardar">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <BaseConfirmacion
-      v-model:abierto="eliminarAbierto"
-      titulo="Eliminar tipo de comprobante"
-      :mensaje="`Esta acción no se puede deshacer. ${errorEliminar}`"
-      texto-confirmar="Eliminar"
-      :cargando="eliminando"
-      @confirmar="confirmarEliminar"
-    />
   </div>
 </template>

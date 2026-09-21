@@ -161,7 +161,7 @@ async function guardar() {
                 </tbody>
               </v-table>
               <div class="d-flex justify-end mt-6">
-                <v-btn @click="paso = 2">Continuar</v-btn>
+                <v-btn color="primary" @click="paso = 2">Continuar</v-btn>
               </div>
             </div>
           </v-stepper-window-item>
@@ -208,8 +208,8 @@ async function guardar() {
               </v-row>
 
               <div class="d-flex justify-space-between mt-6">
-                <v-btn variant="text" @click="paso = 1">Atrás</v-btn>
-                <v-btn @click="paso = 3">Continuar</v-btn>
+                <v-btn variant="tonal" color="primary" @click="paso = 1">Atrás</v-btn>
+                <v-btn color="primary" @click="paso = 3">Continuar</v-btn>
               </div>
             </div>
           </v-stepper-window-item>
@@ -253,8 +253,8 @@ async function guardar() {
                 </v-col>
               </v-row>
               <div class="d-flex justify-space-between mt-6">
-                <v-btn variant="text" @click="paso = 2">Atrás</v-btn>
-                <v-btn @click="paso = 4">Continuar</v-btn>
+                <v-btn variant="tonal" color="primary" @click="paso = 2">Atrás</v-btn>
+                <v-btn color="primary" @click="paso = 4">Continuar</v-btn>
               </div>
             </div>
           </v-stepper-window-item>
@@ -289,8 +289,8 @@ async function guardar() {
               />
 
               <div class="d-flex justify-space-between mt-2">
-                <v-btn variant="text" @click="paso = 3">Atrás</v-btn>
-                <v-btn :loading="guardando" :disabled="!puedeGuardar" @click="guardar">Guardar evaluación</v-btn>
+                <v-btn variant="tonal" color="primary" @click="paso = 3">Atrás</v-btn>
+                <v-btn color="primary" :loading="guardando" :disabled="!puedeGuardar" @click="guardar">Guardar evaluación</v-btn>
               </div>
             </div>
           </v-stepper-window-item>

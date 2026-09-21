@@ -142,11 +142,21 @@ export interface UsuarioPlataformaInput {
 export interface RolConPermisos {
   rol: string
   permisos: string[]
+  /** 05C hardening (pedido explícitamente por el usuario) — para la tabla de roles. */
+  permisos_count: number
+  usuarios_count: number
+  es_reservado: boolean
+  /** Desactivar en vez de eliminar (05C hardening, pedido explícitamente por
+   * el usuario): un rol inactivo deja de ofrecerse para asignaciones nuevas,
+   * sin afectar a quienes ya lo tienen. */
+  activo: boolean
 }
 
 export interface PermisoItem {
   permiso: string
   modulo: string
+  /** Nombre amigable del módulo (05C hardening), ej. "Proveedores" en vez de "GESTION_PROVEEDORES". */
+  modulo_nombre: string
 }
 
 // --- I4 · Configuración y UIT --------------------------------------------------------
@@ -180,21 +190,27 @@ export interface RubroAdmin {
   tipo: TipoRubro
   codigo: string
   nombre: string
+  /** Desactivar en vez de eliminar (05C hardening, pedido explícitamente por
+   * el usuario) — un rubro inactivo deja de ofrecerse en requerimientos/registro nuevos. */
+  activo: boolean
 }
 export interface RubroInput {
   tipo: TipoRubro
   codigo: string
   nombre: string
+  activo: boolean
 }
 
 export interface UnidadMedidaAdmin {
   unidad_medida_id: number
   codigo: string
   nombre: string
+  activo: boolean
 }
 export interface UnidadMedidaInput {
   codigo: string
   nombre: string
+  activo: boolean
 }
 
 export interface TipoComprobanteAdmin {
@@ -202,11 +218,13 @@ export interface TipoComprobanteAdmin {
   codigo: string
   nombre: string
   incluye_igv: boolean
+  activo: boolean
 }
 export interface TipoComprobanteInput {
   codigo: string
   nombre: string
   incluye_igv: boolean
+  activo: boolean
 }
 
 export type ContextoEstado = 'CONVOCATORIA' | 'OFERTA' | 'ENTIDAD' | 'PROVEEDOR'
@@ -218,6 +236,7 @@ export interface EstadoAdmin {
   nombre: string
   color: string
   orden: number
+  activo: boolean
 }
 export interface EstadoInput {
   contexto: ContextoEstado
@@ -225,4 +244,5 @@ export interface EstadoInput {
   nombre: string
   color: string
   orden: number
+  activo: boolean
 }

@@ -27,8 +27,10 @@ const { items, paginacion, cargando, params, recargar } = useListado<UsuarioPlat
   ordenar_por: 'nombre',
 })
 
+// Solo roles activos (05C hardening, pedido explícitamente por el usuario):
+// un rol desactivado deja de ofrecerse para asignaciones nuevas.
 const roles = ref<string[]>([])
-adminApi.roles().then((data) => (roles.value = data.map((r) => r.rol).filter((r) => r !== 'PROVEEDOR')))
+adminApi.roles().then((data) => (roles.value = data.filter((r) => r.activo && r.rol !== 'PROVEEDOR').map((r) => r.rol)))
 
 const entidadesAprobadas = ref<EntidadListaItem[]>([])
 entidadesApi.index({ estado: 'APROBADA', ordenar_por: 'razon_social', por_pagina: 100 }).then((data) => (entidadesAprobadas.value = data.items))

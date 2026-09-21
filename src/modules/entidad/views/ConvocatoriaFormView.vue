@@ -4,7 +4,7 @@
 // misma vista se vuelve de solo lectura y solo ofrece Cancelar. La plantilla
 // DJ se sube en el mismo POST/PUT de Guardar (no en un botón aparte); en
 // edición, si no se elige un archivo nuevo, la existente no se toca.
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { convocatoriasApi } from '@/api/convocatorias.api'
@@ -43,6 +43,16 @@ const form = reactive({
   fecha_fin: '',
 })
 
+function alSeleccionarRequerimiento(reqId: unknown) {
+  limpiarErrores('requerimiento_id')
+  if (!reqId) return
+  const req = requerimientosDisponibles.value.find((r) => r.requerimiento_id === Number(reqId))
+  if (req && req.objeto) {
+    form.nombre_servicio = req.objeto
+    limpiarErrores('nombre_servicio')
+  }
+}
+
 async function cargar() {
   cargando.value = true
   if (!esEdicion) {
@@ -64,6 +74,43 @@ const guardando = ref(false)
 const errorGeneral = ref('')
 const erroresCampo = ref<Record<string, string[]>>({})
 const archivoPlantilla = ref<File[]>([])
+
+function limpiarErrores(campo?: string) {
+  if (campo) {
+    delete erroresCampo.value[campo]
+  } else {
+    erroresCampo.value = {}
+  }
+  errorGeneral.value = ''
+}
+
+watch(
+  () => form.fecha_inicio,
+  () => {
+    limpiarErrores('fecha_inicio')
+    limpiarErrores('fecha_fin')
+  },
+)
+
+watch(
+  () => form.fecha_fin,
+  () => {
+    limpiarErrores('fecha_fin')
+  },
+)
+
+const reglasFechaFin = computed(() => {
+  if (!esBorrador.value) return []
+  return [
+    requerido(),
+    () => {
+      if (!form.fecha_inicio || !form.fecha_fin) return true
+      const inicio = dayjs(form.fecha_inicio)
+      const fin = dayjs(form.fecha_fin)
+      return fin.isAfter(inicio) || 'El campo fecha de fin debe ser una fecha posterior a fecha de inicio.'
+    },
+  ]
+})
 
 async function guardar() {
   if (!formValido.value) return
@@ -178,12 +225,14 @@ const puedeCancelar = computed(() =>
       <v-card class="pa-4 mb-4">
         <v-row dense>
           <v-col v-if="!esEdicion" cols="12">
-            <v-select
+            <v-autocomplete
               v-model="form.requerimiento_id"
               :items="requerimientosDisponibles.map((r) => ({ title: `${r.numero} — ${r.objeto}`, value: r.requerimiento_id }))"
               label="Requerimiento (sin convocatoria previa) *"
               :rules="[requerido()]"
               :error-messages="erroresCampo.requerimiento_id"
+              clearable
+              @update:model-value="alSeleccionarRequerimiento"
             />
           </v-col>
           <v-col v-else cols="12">
@@ -213,8 +262,10 @@ const puedeCancelar = computed(() =>
               v-model="form.fecha_fin"
               label="Fecha y hora de fin *"
               :disabled="!esBorrador"
-              :rules="esBorrador ? [requerido()] : []"
+              :rules="reglasFechaFin"
               :error-messages="erroresCampo.fecha_fin"
+              hint="El campo fecha de fin debe ser una fecha posterior a fecha de inicio."
+              persistent-hint
             />
           </v-col>
         </v-row>
