@@ -124,6 +124,11 @@ export interface UsuarioPlataformaItem {
   id: number
   nombre: string
   correo: string
+  dni: string | null
+  nombres: string | null
+  apellido_paterno: string | null
+  apellido_materno: string | null
+  sexo: string | null
   rol: string
   entidad: { entidad_id: number; razon_social: string } | null
 }
@@ -131,8 +136,12 @@ export interface UsuarioPlataformaItem {
 /** Cuerpo de `POST`/`PUT /admin/usuarios-plataforma` (`UsuarioPlataformaStoreRequest`/`UpdateRequest`).
  * `entidad_id` solo aplica (y es obligatorio) si `rol === 'ENTIDAD'`. */
 export interface UsuarioPlataformaInput {
-  nombre: string
+  dni: string
+  nombres: string
+  apellido_paterno: string
+  apellido_materno: string
   correo: string
+  sexo: string
   rol: string
   entidad_id: number | null
 }

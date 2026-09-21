@@ -36,16 +36,32 @@ const entidadesAprobadas = ref<EntidadListaItem[]>([])
 entidadesApi.index({ estado: 'APROBADA', ordenar_por: 'razon_social', por_pagina: 100 }).then((data) => (entidadesAprobadas.value = data.items))
 
 const cabeceras = [
-  { title: 'Nombre', key: 'nombre' },
+  { title: 'DNI', key: 'dni', sortable: false },
+  { title: 'Nombres y Apellidos', key: 'nombre' },
   { title: 'Correo', key: 'correo', sortable: false },
+  { title: 'Sexo', key: 'sexo', sortable: false },
   { title: 'Rol', key: 'rol', sortable: false },
   { title: 'Entidad', key: 'entidad', sortable: false },
   { title: '', key: 'acciones', sortable: false },
 ]
 
+const opcionesSexo = [
+  { title: 'Masculino', value: 'M' },
+  { title: 'Femenino', value: 'F' },
+]
+
 const abierto = ref(false)
 const editando = ref<UsuarioPlataformaItem | null>(null)
-const form = reactive({ nombre: '', correo: '', rol: '', entidad_id: null as number | null })
+const form = reactive({
+  dni: '',
+  nombres: '',
+  apellido_paterno: '',
+  apellido_materno: '',
+  correo: '',
+  sexo: 'M',
+  rol: '',
+  entidad_id: null as number | null,
+})
 const guardando = ref(false)
 const errorGeneral = ref('')
 const erroresCampo = ref<Record<string, string[]>>({})
@@ -60,8 +76,12 @@ watch(
 
 function abrirNuevo() {
   editando.value = null
-  form.nombre = ''
+  form.dni = ''
+  form.nombres = ''
+  form.apellido_paterno = ''
+  form.apellido_materno = ''
   form.correo = ''
+  form.sexo = 'M'
   form.rol = 'AUDITOR'
   form.entidad_id = null
   errorGeneral.value = ''
@@ -70,8 +90,12 @@ function abrirNuevo() {
 }
 function abrirEditar(usuario: UsuarioPlataformaItem) {
   editando.value = usuario
-  form.nombre = usuario.nombre
+  form.dni = usuario.dni ?? ''
+  form.nombres = usuario.nombres ?? ''
+  form.apellido_paterno = usuario.apellido_paterno ?? ''
+  form.apellido_materno = usuario.apellido_materno ?? ''
   form.correo = usuario.correo
+  form.sexo = usuario.sexo ?? 'M'
   form.rol = usuario.rol
   form.entidad_id = usuario.entidad?.entidad_id ?? null
   errorGeneral.value = ''
@@ -137,9 +161,9 @@ async function confirmarEliminar() {
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por nombre o correo"
+        label="Buscar por DNI, nombre o correo"
         prepend-inner-icon="mdi-magnify"
-        style="max-width: 280px"
+        style="max-width: 320px"
         clearable
       />
       <v-select
@@ -163,6 +187,10 @@ async function confirmarEliminar() {
       :loading="cargando"
       mensaje-vacio="No hay usuarios registrados."
     >
+      <template #item.dni="{ item }">{{ item.dni ?? '—' }}</template>
+      <template #item.sexo="{ item }">
+        {{ item.sexo === 'M' ? 'Masculino' : item.sexo === 'F' ? 'Femenino' : '—' }}
+      </template>
       <template #item.entidad="{ item }">{{ item.entidad?.razon_social ?? '—' }}</template>
       <template #item.acciones="{ item }">
         <v-btn variant="text" size="small" @click="abrirEditar(item)">Editar</v-btn>
@@ -170,27 +198,81 @@ async function confirmarEliminar() {
       </template>
     </BaseTablaServidor>
 
-    <v-dialog v-model="abierto" max-width="480">
+    <v-dialog v-model="abierto" max-width="580">
       <v-card>
         <v-card-title class="text-titulo">{{ editando ? 'Editar usuario' : 'Nuevo usuario' }}</v-card-title>
         <v-card-text>
           <v-alert v-if="errorGeneral" type="error" density="compact" class="mb-4">{{ errorGeneral }}</v-alert>
-          <v-text-field v-model="form.nombre" label="Nombre" :error-messages="erroresCampo.nombre" class="mb-2" />
-          <v-text-field
-            v-model="form.correo"
-            label="Correo"
-            type="email"
-            :error-messages="erroresCampo.correo"
-            class="mb-2"
-          />
-          <v-select v-model="form.rol" :items="roles" label="Rol" :error-messages="erroresCampo.rol" class="mb-2" />
-          <v-select
-            v-if="esEntidad"
-            v-model="form.entidad_id"
-            :items="entidadesAprobadas.map((e) => ({ title: e.razon_social, value: e.entidad_id }))"
-            label="Entidad"
-            :error-messages="erroresCampo.entidad_id"
-          />
+
+          <v-row density="compact">
+            <v-col cols="12" sm="4">
+              <v-text-field
+                v-model="form.dni"
+                label="DNI"
+                maxlength="8"
+                counter="8"
+                :error-messages="erroresCampo.dni"
+              />
+            </v-col>
+            <v-col cols="12" sm="4">
+              <v-select
+                v-model="form.sexo"
+                :items="opcionesSexo"
+                label="Sexo"
+                :error-messages="erroresCampo.sexo"
+              />
+            </v-col>
+            <v-col cols="12" sm="4">
+              <v-select
+                v-model="form.rol"
+                :items="roles"
+                label="Rol"
+                :error-messages="erroresCampo.rol"
+              />
+            </v-col>
+
+            <v-col cols="12">
+              <v-text-field
+                v-model="form.nombres"
+                label="Nombres"
+                :error-messages="erroresCampo.nombres"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.apellido_paterno"
+                label="Apellido Paterno"
+                :error-messages="erroresCampo.apellido_paterno"
+              />
+            </v-col>
+
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.apellido_materno"
+                label="Apellido Materno"
+                :error-messages="erroresCampo.apellido_materno"
+              />
+            </v-col>
+
+            <v-col cols="12">
+              <v-text-field
+                v-model="form.correo"
+                label="Correo electrónico"
+                type="email"
+                :error-messages="erroresCampo.correo"
+              />
+            </v-col>
+
+            <v-col v-if="esEntidad" cols="12">
+              <v-select
+                v-model="form.entidad_id"
+                :items="entidadesAprobadas.map((e) => ({ title: e.razon_social, value: e.entidad_id }))"
+                label="Entidad"
+                :error-messages="erroresCampo.entidad_id"
+              />
+            </v-col>
+          </v-row>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
