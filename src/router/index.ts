@@ -254,15 +254,21 @@ const router = createRouter({
           component: () => import('@/modules/muni/views/EntidadDetalleView.vue'),
         },
         {
+          path: 'catalogos',
+          name: 'catalogos',
+          meta: { permiso: 'administracion.catalogos' },
+          component: () => import('@/modules/catalogos/views/CatalogosView.vue'),
+        },
+        {
+          path: 'configuracion',
+          name: 'configuracion',
+          meta: { permiso: 'administracion.configuracion' },
+          component: () => import('@/modules/muni/views/ConfiguracionView.vue'),
+        },
+        {
           path: 'administracion',
           name: 'administracion',
-          // 05C hardening: la ruta quedó exigiendo `administracion.usuarios`
-          // (permiso retirado del catálogo al separar el módulo Usuarios) —
-          // ahora exige cualquiera de los 2 permisos que de verdad usan las
-          // pestañas que quedan (Catálogos/Configuración); bug real, nadie
-          // podía entrar a "Configuración" aunque tuviera esos permisos.
-          meta: { permiso: 'administracion.catalogos|administracion.configuracion' },
-          component: () => import('@/modules/muni/views/AdministracionView.vue'),
+          redirect: '/app/configuracion',
         },
         {
           // Cualquier módulo del sidebar sin pantalla propia todavía.
