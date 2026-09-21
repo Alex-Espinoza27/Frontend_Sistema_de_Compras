@@ -32,21 +32,81 @@ code {
   outline-offset: 2px;
 }
 
-/* `v-switch` "apagado" (activo/inactivo, usado en Áreas/Roles y Permisos/los
-   4 catálogos de Configuración) se volvía casi invisible en los dos temas
-   (05C hardening, pedido explícitamente por el usuario — afecta a TODOS los
-   switches del proyecto a propósito): Vuetify pinta el track sin marcar con
-   `surface-variant` a 60% de opacidad, pero en este tema `surface-variant`
-   es casi idéntico a `surface`/`background` a propósito (superficies
-   sutiles, ver nota de VStepperItem más abajo) — la combinación dejaba el
-   "off" sin contraste real contra el fondo. Se fuerza el mismo token `grey`
-   que ya usan los chips de estado (BORRADOR/NO_ADJUDICADA) a opacidad alta;
-   el thumb no se toca (su `surface-bright` por defecto ya contrasta bien
-   contra un track gris real). Se excluye `--dirty` (encendido) para no tocar
-   el `color="primary"` que ya se ve bien. */
+/* --- Estilos globales para `v-switch` (Switches / Toggles) --- */
+
+/* Track para estado inactivo / apagado (not dirty) en tema claro */
 .v-switch .v-selection-control:not(.v-selection-control--dirty) .v-switch__track {
-  background-color: rgb(var(--v-theme-grey));
-  opacity: 0.8;
+  background-color: #94A3B8 !important;
+  opacity: 1 !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Track para estado inactivo / apagado (not dirty) en tema oscuro */
+.v-theme--oscuro .v-switch .v-selection-control:not(.v-selection-control--dirty) .v-switch__track {
+  background-color: #475569 !important;
+  opacity: 1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Botón (thumb) para estado inactivo / apagado */
+.v-switch .v-selection-control:not(.v-selection-control--dirty) .v-switch__thumb {
+  background-color: #FFFFFF !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+.v-theme--oscuro .v-switch .v-selection-control:not(.v-selection-control--dirty) .v-switch__thumb {
+  background-color: #E2E8F0 !important;
+  color: #0F172A !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Estado activo / encendido (dirty) */
+.v-switch .v-selection-control.v-selection-control--dirty .v-switch__track {
+  opacity: 1 !important;
+}
+
+/* Control deshabilitado (:disabled) — mantener visible sin perder opacidad en fondo */
+.v-switch .v-selection-control.v-selection-control--disabled {
+  opacity: 0.75 !important;
+  cursor: not-allowed !important;
+}
+
+/* --- Estilos globales para `v-checkbox` desmarcados --- */
+.v-checkbox .v-selection-control:not(.v-selection-control--dirty) .v-icon,
+.v-checkbox-btn:not(.v-selection-control--dirty) .v-icon {
+  color: #64748B !important;
+  opacity: 1 !important;
+}
+
+.v-theme--oscuro .v-checkbox .v-selection-control:not(.v-selection-control--dirty) .v-icon,
+.v-theme--oscuro .v-checkbox-btn:not(.v-selection-control--dirty) .v-icon {
+  color: #94A3B8 !important;
+  opacity: 1 !important;
+}
+
+/* --- Estilos globales para `v-tooltip` (Tooltips flotantes) --- */
+.v-overlay-container .v-tooltip .v-overlay__content,
+.v-tooltip .v-overlay__content {
+  background-color: #0F2438 !important;
+  color: #FFFFFF !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25rem !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  opacity: 1 !important;
+  z-index: 9999 !important;
+}
+
+.v-theme--oscuro .v-overlay-container .v-tooltip .v-overlay__content,
+.v-theme--oscuro .v-tooltip .v-overlay__content {
+  background-color: #1E293B !important;
+  color: #F8FAFC !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6) !important;
 }
 
 /* Vuetify's VStepperItem pinta el avatar del paso activo/completado con
