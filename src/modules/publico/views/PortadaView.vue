@@ -6,6 +6,7 @@ import ConvocatoriasEntidadView from '@/modules/publico/views/ConvocatoriasEntid
 import TarjetaEntidad from '@/modules/publico/components/TarjetaEntidad.vue'
 import type { EntidadPublica } from '@/modules/publico/publico.types'
 
+const nombreInstitucion = import.meta.env.VITE_APP_NOMBRE || 'Compras La Perla'
 const params = reactive({ buscar: '', soloConVigentes: false })
 const entidades = ref<EntidadPublica[]>([])
 const cargando = ref(false)
@@ -70,10 +71,10 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
   <div v-else>
     <section class="hero py-12 px-4">
       <v-container>
-        <div class="text-h4 text-titulo mb-2">Compras San Isidro</div>
+        <div class="text-h4 text-titulo font-weight-bold mb-2">{{ nombreInstitucion }}</div>
         <div class="text-body-1 text-grey mb-8" style="max-width: 640px">
           Consulta las contrataciones de bienes y servicios (hasta 8 UIT) de la Municipalidad
-          Distrital de San Isidro y de las demás entidades públicas y privadas registradas en la plataforma.
+          Distrital de La Perla y de las demás entidades públicas registradas en la plataforma.
         </div>
 
         <div class="d-flex flex-wrap ga-4 mb-2">

@@ -48,10 +48,20 @@ export const convocatoriasApi = {
 
   cancelar: (id: number, motivo: string) => cliente.post<never, null>(`/convocatorias/${id}/cancelar`, { motivo }),
 
+  ampliarFechaFin: (id: number, fechaFin: string) =>
+    cliente.post<never, { fecha_fin: string; fecha_fin_anterior: string | null }>(`/convocatorias/${id}/ampliar-fecha-fin`, {
+      fecha_fin: fechaFin,
+    }),
+
   adjudicar: (id: number, ofertaId: number | null) =>
     cliente.post<never, AdjudicarRespuesta>(`/convocatorias/${id}/adjudicar`, { oferta_id: ofertaId }),
 
   desierta: (id: number, motivo: string) => cliente.post<never, null>(`/convocatorias/${id}/desierta`, { motivo }),
 
   resultados: (id: number) => cliente.get<never, ResultadosConvocatoria>(`/convocatorias/${id}/resultados`),
+
+  plantillaDjDefecto: () =>
+    cliente.get<never, { existe: boolean; archivo: { archivo_id: number; nombre: string } | null }>(
+      '/convocatorias/plantilla-dj-defecto',
+    ),
 }

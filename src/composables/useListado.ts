@@ -12,7 +12,11 @@ const DEBOUNCE_BUSCAR_MS = 400
  * debounce; los demás recargan de inmediato. Cualquier otro filtro ad-hoc
  * (ej. `estado_grupo`) se muta en `params` y se recarga llamando `recargar()`.
  */
-export function useListado<T>(fnListar: FnListar<T>, paramsIniciales: ListadoParams = {}) {
+export function useListado<T>(
+  fnListar: FnListar<T>,
+  paramsIniciales: ListadoParams = {},
+  clavePersistencia?: string,
+) {
   const items = ref<T[]>([])
   const paginacion = ref({
     pagina: 1,
@@ -22,17 +26,40 @@ export function useListado<T>(fnListar: FnListar<T>, paramsIniciales: ListadoPar
   })
   const cargando = ref(false)
 
+  let paramsFinales: ListadoParams = { ...paramsIniciales }
+  if (clavePersistencia) {
+    try {
+      const guardados = sessionStorage.getItem(clavePersistencia)
+      if (guardados) {
+        const parsiados = JSON.parse(guardados)
+        paramsFinales = { ...paramsIniciales, ...parsiados }
+      }
+    } catch {
+      // Si falla la lectura, se usan paramsIniciales
+    }
+  }
+
   const params = reactive<ListadoParams>({
     pagina: 1,
     por_pagina: 15,
     ordenar_por: undefined,
     direccion: undefined,
     buscar: undefined,
-    ...paramsIniciales,
+    ...paramsFinales,
   })
+
+  function guardarEnStorage() {
+    if (!clavePersistencia) return
+    try {
+      sessionStorage.setItem(clavePersistencia, JSON.stringify(params))
+    } catch {
+      // Ignorar errores de storage
+    }
+  }
 
   async function recargar() {
     cargando.value = true
+    guardarEnStorage()
     try {
       const respuesta = await fnListar({ ...params })
       items.value = respuesta.items

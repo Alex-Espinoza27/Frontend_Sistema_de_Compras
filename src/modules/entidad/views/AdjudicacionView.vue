@@ -83,7 +83,7 @@ async function confirmarDesierta(motivo: string | undefined) {
 
 <template>
   <v-container class="py-8" max-width="900">
-    <BaseVolver :to="`/app/convocatorias/${convocatoriaId}/evaluacion`" texto="Volver a evaluación" />
+    <BaseVolver to="/app/adjudicacion" texto="Volver a Adjudicación" />
     <div class="text-h5 text-titulo mb-6">Adjudicación</div>
 
     <v-progress-circular v-if="cargando" indeterminate color="primary" />

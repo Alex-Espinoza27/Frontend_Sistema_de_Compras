@@ -35,12 +35,12 @@ async function cargar() {
 cargar()
 
 const cabeceras = [
+  { title: 'Acciones', key: 'acciones' },
   { title: 'Rol', key: 'rol' },
   { title: 'Tipo', key: 'tipo' },
   { title: 'N.º permisos', key: 'permisos_count' },
   { title: 'N.º usuarios', key: 'usuarios_count' },
   { title: 'Estado', key: 'activo' },
-  { title: '', key: 'acciones' },
 ]
 
 // --- Nuevo rol -----------------------------------------------------------------
@@ -91,11 +91,20 @@ async function alternarActivo(rol: RolConPermisos) {
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Roles y Permisos</div>
       <div class="d-flex ga-2">
-        <v-btn icon color="primary" variant="text" :loading="cargando" @click="cargar()">
+        <v-btn icon color="primary" variant="outlined" :loading="cargando" @click="cargar()">
           <v-icon icon="mdi-refresh" />
           <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
         </v-btn>
-        <v-btn v-can="'roles_permisos.gestionar'" prepend-icon="mdi-plus" @click="abrirNuevo">Nuevo rol</v-btn>
+        <v-btn
+          v-can="'roles_permisos.gestionar'"
+          color="primary"
+          variant="flat"
+          elevation="2"
+          class="font-weight-medium px-5"
+          @click="abrirNuevo"
+        >
+          Nuevo rol
+        </v-btn>
       </div>
     </div>
 
@@ -109,6 +118,21 @@ async function alternarActivo(rol: RolConPermisos) {
       </thead>
       <tbody>
         <tr v-for="rol in roles" :key="rol.rol">
+          <td>
+            <div class="d-flex align-center ga-1">
+              <v-btn
+                v-can="'roles_permisos.ver'"
+                icon
+                variant="text"
+                size="small"
+                color="primary"
+                :to="`/app/roles-permisos/${rol.rol}`"
+              >
+                <v-icon icon="mdi-shield-key-outline" />
+                <v-tooltip activator="parent" location="top">Gestionar permisos</v-tooltip>
+              </v-btn>
+            </div>
+          </td>
           <td class="text-datos">{{ rol.rol }}</td>
           <td>
             <v-chip :color="rol.es_reservado ? 'grey' : 'primary'" variant="tonal" size="small">
@@ -132,19 +156,18 @@ async function alternarActivo(rol: RolConPermisos) {
               </v-tooltip>
             </span>
           </td>
-          <td>
-            <v-btn v-can="'roles_permisos.ver'" variant="text" size="small" :to="`/app/roles-permisos/${rol.rol}`">
-              Permisos
-            </v-btn>
-          </td>
         </tr>
       </tbody>
     </v-table>
 
-    <v-dialog v-model="nuevoAbierto" max-width="900" scrollable>
-      <v-card>
-        <v-card-title class="text-titulo">Nuevo rol</v-card-title>
-        <v-card-text>
+    <v-dialog v-model="nuevoAbierto" max-width="900" scrollable persistent>
+      <v-card class="rounded-lg">
+        <v-card-title class="d-flex align-center justify-space-between pa-4 bg-surface text-titulo font-weight-bold">
+          <span>Nuevo rol</span>
+          <v-btn icon="mdi-close" variant="text" density="compact" @click="nuevoAbierto = false" />
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-4">
           <v-form v-model="nuevoFormValido">
             <v-text-field
               v-model="nuevoForm.nombre"
@@ -155,14 +178,14 @@ async function alternarActivo(rol: RolConPermisos) {
               :rules="[requerido()]"
               :error-messages="erroresNuevo.nombre"
             />
-            <div class="text-subtitle-2 mb-2">Permisos</div>
+            <div class="text-subtitle-2 mb-2 font-weight-medium">Permisos</div>
             <SelectorPermisosPorModulo v-model="nuevoForm.permisos" :permisos="permisosTodos" />
           </v-form>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="nuevoAbierto = false">Cancelar</v-btn>
-          <v-btn color="primary" :loading="creando" :disabled="!nuevoFormValido" @click="crearRol">Crear</v-btn>
+        <v-divider />
+        <v-card-actions class="pa-4 bg-surface d-flex justify-end ga-2">
+          <v-btn variant="outlined" color="secondary" class="px-5" @click="nuevoAbierto = false">Cancelar</v-btn>
+          <v-btn color="primary" variant="flat" elevation="2" class="px-6" :loading="creando" :disabled="!nuevoFormValido" @click="crearRol">Crear</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

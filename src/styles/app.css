@@ -1,29 +1,33 @@
-/* Fuentes autoalojadas (05D §3 / 05A §1) — nunca depender de Google Fonts en runtime */
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
-@import '@fontsource/plus-jakarta-sans/600.css';
-@import '@fontsource/plus-jakarta-sans/700.css';
+/* Fuentes autoalojadas — Nunito como tipografía global */
+@import '@fontsource/nunito/400.css';
+@import '@fontsource/nunito/500.css';
+@import '@fontsource/nunito/600.css';
+@import '@fontsource/nunito/700.css';
+@import '@fontsource/nunito/800.css';
 @import '@fontsource/jetbrains-mono/400.css';
 
 @import './tokens.css';
 
 html,
-body {
-  font-family: var(--font-cuerpo);
+body,
+.v-application {
+  font-family: var(--font-cuerpo) !important;
 }
 
 h1,
 h2,
 h3,
+h4,
+h5,
+h6,
 .v-toolbar-title,
 .text-titulo {
-  font-family: var(--font-titulo);
+  font-family: var(--font-titulo) !important;
 }
 
 .text-datos,
 code {
-  font-family: var(--font-datos);
+  font-family: var(--font-datos) !important;
 }
 
 /* Foco visible siempre — nunca outline: none (05D §9) */
@@ -119,6 +123,21 @@ code {
 .v-stepper-item--complete .v-stepper-item__avatar.v-avatar {
   background: rgb(var(--v-theme-primary)) !important;
   color: rgb(var(--v-theme-on-primary, 255, 255, 255)) !important;
+}
+
+/* --- Botones `icon` (refresh de listados, acciones de fila, etc.) --- */
+/* El default global de VBtn (plugins/vuetify.ts: rounded:'md', height:42) se
+   aplica a TODO v-btn, icon o no. Para uno de texto da una altura consistente,
+   pero en un `v-btn icon` el ancho sigue el tamaño propio de `.v-btn--icon`
+   (36px por defecto, distinto de los 42px de alto forzados), y `rounded:'md'`
+   pisa el radio 50% propio del icon-button — resultado: una "esfera alargada"
+   en vez de un círculo, repetido en cualquier módulo que use `v-btn icon`
+   (05C hardening, reportado por el usuario). Se fuerza acá, una sola vez,
+   ancho = alto y radio 50%, para que sea siempre un círculo perfecto. */
+.v-btn.v-btn--icon {
+  width: 42px !important;
+  min-width: 42px !important;
+  border-radius: 50% !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -17,16 +17,17 @@ import { hoyTexto } from '@/utils/fechas'
 const { items, paginacion, cargando, params, recargar } = useListado<PresentacionOfertaItem>(
   presentacionOfertasApi.index,
   { ordenar_por: 'fecha_envio', direccion: 'desc', desde: hoyTexto(), hasta: hoyTexto() },
+  'filtros_presentacion_ofertas',
 )
 
 const cabeceras = [
+  { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Constancia', key: 'constancia_codigo' },
   { title: 'Convocatoria', key: 'convocatoria', sortable: false },
   { title: 'Proveedor', key: 'proveedor', sortable: false },
   { title: 'Total', key: 'total_general' },
   { title: 'Estado', key: 'estado', sortable: false },
   { title: 'Fecha de envío', key: 'fecha_envio' },
-  { title: '', key: 'acciones', sortable: false },
 ]
 
 </script>
@@ -35,7 +36,7 @@ const cabeceras = [
   <v-container class="py-8">
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Presentación de Ofertas</div>
-      <v-btn icon color="primary" variant="text" :loading="cargando" @click="recargar()">
+      <v-btn icon color="primary" variant="outlined" :loading="cargando" @click="recargar()">
         <v-icon icon="mdi-refresh" />
         <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
       </v-btn>
@@ -53,11 +54,11 @@ const cabeceras = [
         v-model="params.estado"
         :items="[
           { title: 'Enviada', value: 'ENVIADA' },
-          { title: 'En evaluación', value: 'EN_EVALUACION' },
+          { title: 'En Evaluación', value: 'EN_EVALUACION' },
           { title: 'Aprobada', value: 'APROBADA' },
           { title: 'Desaprobada', value: 'DESAPROBADA' },
           { title: 'Adjudicada', value: 'ADJUDICADA' },
-          { title: 'No adjudicada', value: 'NO_ADJUDICADA' },
+          { title: 'No Adjudicada', value: 'NO_ADJUDICADA' },
         ]"
         label="Estado"
         clearable
@@ -73,6 +74,23 @@ const cabeceras = [
       />
     </div>
 
+    <v-card variant="flat" :border="false" class="pa-3 mb-4 rounded-lg bg-surface leyenda-estados">
+      <div class="d-flex align-center flex-wrap ga-3">
+        <div class="text-caption font-weight-bold text-grey-darken-1 d-flex align-center ga-1">
+          <v-icon icon="mdi-information-outline" size="16" />
+          Leyenda de estados:
+        </div>
+        <div class="d-flex flex-wrap align-center ga-2">
+          <BaseChipEstado :estado="{ codigo: 'ENVIADA', nombre: 'Enviada', color: 'info' }" />
+          <BaseChipEstado :estado="{ codigo: 'EN_EVALUACION', nombre: 'En Evaluación', color: 'grey' }" />
+          <BaseChipEstado :estado="{ codigo: 'APROBADA', nombre: 'Aprobada', color: 'success' }" />
+          <BaseChipEstado :estado="{ codigo: 'DESAPROBADA', nombre: 'Desaprobada', color: 'error' }" />
+          <BaseChipEstado :estado="{ codigo: 'ADJUDICADA', nombre: 'Adjudicada', color: 'primary' }" />
+          <BaseChipEstado :estado="{ codigo: 'NO_ADJUDICADA', nombre: 'No Adjudicada', color: 'grey' }" />
+        </div>
+      </div>
+    </v-card>
+
     <BaseTablaServidor
       v-model:page="params.pagina"
       v-model:items-per-page="params.por_pagina"
@@ -84,15 +102,35 @@ const cabeceras = [
       :loading="cargando"
       mensaje-vacio="Aún no se han recibido ofertas."
     >
+      <template #item.acciones="{ item }">
+        <div class="d-flex align-center ga-1">
+          <v-btn
+            :to="`/app/presentacion-ofertas/${item.oferta_id}`"
+            icon
+            variant="text"
+            size="small"
+            color="primary"
+          >
+            <v-icon icon="mdi-eye-outline" />
+            <v-tooltip activator="parent" location="top">Ver detalle de oferta</v-tooltip>
+          </v-btn>
+        </div>
+      </template>
       <template #item.convocatoria="{ item }">{{ item.convocatoria.numero ?? '—' }} — {{ item.convocatoria.nombre_servicio }}</template>
       <template #item.proveedor="{ item }">{{ item.proveedor.razon_social }}</template>
       <template #item.estado="{ item }">
         <BaseChipEstado :estado="{ codigo: item.estado.codigo, nombre: item.estado.nombre, color: item.estado.color }" />
       </template>
       <template #item.fecha_envio="{ item }">{{ dayjs(item.fecha_envio).tz().format('DD/MM/YYYY HH:mm') }}</template>
-      <template #item.acciones="{ item }">
-        <v-btn variant="text" size="small" :to="`/app/presentacion-ofertas/${item.oferta_id}`">Ver detalle</v-btn>
-      </template>
     </BaseTablaServidor>
   </v-container>
 </template>
+
+<style scoped>
+/* Mismo fix que ConvocatoriasView.vue: `variant="outlined"` dibuja el borde
+   con `currentColor` (negro/gris oscuro), no con el `--border-color` suave
+   del tema — se reemplaza por una sombra básica, sin borde. */
+.leyenda-estados {
+  box-shadow: var(--sombra-1);
+}
+</style>

@@ -16,12 +16,17 @@ withDefaults(
     errorMessages?: string[]
     disabled?: boolean
     clearable?: boolean
+    /** Fecha mínima seleccionable (`YYYY-MM-DD`) — p.ej. en "fecha de fin" se
+     * pasa la fecha de inicio para no poder elegir un día anterior (05C
+     * hardening, pedido explícitamente por el usuario). */
+    minFecha?: string
   }>(),
   {
     rules: () => [],
     errorMessages: () => [],
     disabled: false,
     clearable: false,
+    minFecha: undefined,
   },
 )
 
@@ -87,13 +92,21 @@ const textoVisible = computed(() => {
       />
     </template>
     <v-card>
-      <v-date-picker v-model="fechaSeleccionada" hide-header show-adjacent-months />
-      <div class="pa-4 pt-0">
-        <v-text-field v-model="horaSeleccionada" type="time" label="Hora" prepend-inner-icon="mdi-clock-outline" hide-details />
+      <div class="d-flex align-stretch flex-wrap">
+        <v-date-picker
+          v-model="fechaSeleccionada"
+          color="primary"
+          :min="minFecha"
+          width="300"
+          hide-header
+          show-adjacent-months
+        />
+        <v-divider vertical />
+        <v-time-picker v-model="horaSeleccionada" color="primary" format="24hr" width="300" />
       </div>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="menuAbierto = false">Listo</v-btn>
+        <v-btn variant="text" color="primary" @click="menuAbierto = false">Listo</v-btn>
       </v-card-actions>
     </v-card>
   </v-menu>

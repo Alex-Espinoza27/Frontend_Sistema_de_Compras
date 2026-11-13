@@ -14,6 +14,10 @@ export interface ParamsEntidadesPublicas {
 }
 
 export const publicoApi = {
+  // Color de marca (05C hardening, pedido explícitamente por el usuario):
+  // público porque `App.vue` lo aplica al cargar, antes de cualquier login.
+  tema: () => cliente.get<never, { color_primario: string | null }>('/publico/configuracion/tema'),
+
   entidades: (params: ParamsEntidadesPublicas = {}) =>
     cliente.get<never, { items: EntidadPublica[] }>('/publico/entidades', { params }),
 

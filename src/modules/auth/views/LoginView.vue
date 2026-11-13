@@ -123,9 +123,9 @@ async function enviar() {
                   density="compact"
                   hide-details
                 />
-                <router-link to="/recuperar-password" class="text-body-2 text-primary text-decoration-none">
+                <v-btn variant="text" color="primary" size="small" density="compact" to="/recuperar-password">
                   ¿Olvidó su contraseña?
-                </router-link>
+                </v-btn>
               </div>
 
               <v-btn type="submit" color="primary" block size="large" :loading="enviando" :disabled="!formValido">
@@ -133,12 +133,12 @@ async function enviar() {
               </v-btn>
             </v-form>
 
-            <p class="text-body-2 text-center mt-6" style="opacity: 0.8">
-              ¿Es proveedor y no tiene cuenta?
-              <router-link to="/registro" class="text-primary text-decoration-none font-weight-medium">
-                Regístrese aquí
-              </router-link>
-            </p>
+            <div class="text-center mt-6">
+              <p class="text-body-2 mb-2" style="opacity: 0.8">¿Es proveedor y no tiene cuenta?</p>
+              <v-btn variant="tonal" color="primary" rounded="pill" to="/registro" class="px-6">
+                Registrarse aquí
+              </v-btn>
+            </div>
           </div>
         </div>
       </v-theme-provider>

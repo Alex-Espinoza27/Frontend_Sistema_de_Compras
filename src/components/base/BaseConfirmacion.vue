@@ -54,9 +54,13 @@ function confirmar() {
 
 <template>
   <v-dialog v-model="abierto" max-width="480">
-    <v-card>
-      <v-card-title class="text-titulo">{{ titulo }}</v-card-title>
-      <v-card-text>
+    <v-card class="rounded-lg">
+      <v-card-title class="d-flex align-center justify-space-between pa-4 bg-surface text-titulo font-weight-bold">
+        <span>{{ titulo }}</span>
+        <v-btn icon="mdi-close" variant="text" density="compact" @click="abierto = false" />
+      </v-card-title>
+      <v-divider />
+      <v-card-text class="pa-4">
         <p class="text-body-2 mb-4">{{ mensaje }}</p>
         <v-textarea
           v-if="pedirMotivo"
@@ -66,10 +70,10 @@ function confirmar() {
         />
         <v-checkbox v-if="fuerte" v-model="aceptado" label="Entiendo y deseo continuar" hide-details />
       </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="abierto = false">Cancelar</v-btn>
-        <v-btn :color="color" :loading="cargando" :disabled="!puedeConfirmar" @click="confirmar">
+      <v-divider />
+      <v-card-actions class="pa-4 bg-surface d-flex justify-end ga-2">
+        <v-btn variant="outlined" color="secondary" class="px-5" @click="abierto = false">Cancelar</v-btn>
+        <v-btn :color="color" variant="flat" elevation="2" class="px-6" :loading="cargando" :disabled="!puedeConfirmar" @click="confirmar">
           {{ textoConfirmar }}
         </v-btn>
       </v-card-actions>

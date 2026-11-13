@@ -61,7 +61,7 @@ function abrirModal(ofertaId: number) {
 
 <template>
   <v-container class="py-8">
-    <BaseVolver to="/app/convocatorias" texto="Volver a convocatorias" />
+    <BaseVolver to="/app/evaluacion" texto="Volver a Evaluación" />
     <div class="text-h5 text-titulo mb-6">Evaluación de ofertas</div>
 
     <v-progress-circular v-if="cargando" indeterminate color="primary" />

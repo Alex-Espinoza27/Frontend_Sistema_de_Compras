@@ -8,6 +8,8 @@ export interface EntidadListaItem {
   numero_documento: string
   razon_social: string
   sigla: string
+  correo: string | null
+  telefono: string | null
   estado: Estado
   fecha_solicitud: string
   convocatorias_total: number
@@ -77,8 +79,12 @@ export type EstadoProveedorCodigo = 'ACTIVO' | 'SUSPENDIDO'
 export interface ProveedorAdminItem {
   proveedor_id: number
   numero_documento: string
+  tipo_documento: TipoDocumentoProveedor
+  tipo_persona: TipoPersona
   razon_social: string
   correo: string
+  telefono: string | null
+  persona_contacto: string | null
   estado: Estado
 }
 
@@ -120,28 +126,42 @@ export interface ProveedorAdminInput {
  * `rol` es cualquier rol excepto PROVEEDOR (ese login se gestiona en
  * Mantenimiento de Proveedores) — incluye ADMINISTRADOR/AUDITOR/ENTIDAD y
  * cualquier rol custom creado desde Roles y Permisos. */
+export type TipoDocumentoUsuario = 'DNI' | 'CE' | 'PASAPORTE'
+
 export interface UsuarioPlataformaItem {
   id: number
   nombre: string
   correo: string
+  /** Desactivar en vez de eliminar (05C hardening, pedido explícitamente por
+   * el usuario, mismo patrón que Proveedores/Catálogos/Roles): un usuario
+   * desactivado no puede iniciar sesión pero su registro se conserva. */
+  activo: boolean
   dni: string | null
+  tipo_documento: { tipo_documento_id: number; codigo: TipoDocumentoUsuario; nombre: string } | null
   nombres: string | null
   apellido_paterno: string | null
   apellido_materno: string | null
   sexo: string | null
+  celular: string | null
+  fecha_nacimiento: string | null
   rol: string
   entidad: { entidad_id: number; razon_social: string } | null
 }
 
 /** Cuerpo de `POST`/`PUT /admin/usuarios-plataforma` (`UsuarioPlataformaStoreRequest`/`UpdateRequest`).
- * `entidad_id` solo aplica (y es obligatorio) si `rol === 'ENTIDAD'`. */
+ * `entidad_id` solo aplica (y es obligatorio) si `rol === 'ENTIDAD'`. `tipo_documento`,
+ * `celular` y `fecha_nacimiento` son opcionales (05C hardening, pedido explícitamente
+ * por el usuario); si no se envía `tipo_documento` el backend asume DNI. */
 export interface UsuarioPlataformaInput {
   dni: string
+  tipo_documento?: TipoDocumentoUsuario
   nombres: string
   apellido_paterno: string
   apellido_materno: string
   correo: string
   sexo: string
+  celular?: string | null
+  fecha_nacimiento?: string | null
   rol: string
   entidad_id: number | null
 }
@@ -205,7 +225,7 @@ export interface RubroAdmin {
 }
 export interface RubroInput {
   tipo: TipoRubro
-  codigo: string
+  codigo?: string
   nombre: string
   activo: boolean
 }
@@ -217,7 +237,7 @@ export interface UnidadMedidaAdmin {
   activo: boolean
 }
 export interface UnidadMedidaInput {
-  codigo: string
+  codigo?: string
   nombre: string
   activo: boolean
 }
@@ -230,9 +250,23 @@ export interface TipoComprobanteAdmin {
   activo: boolean
 }
 export interface TipoComprobanteInput {
-  codigo: string
+  codigo?: string
   nombre: string
   incluye_igv: boolean
+  activo: boolean
+}
+
+export interface TipoDocumentoAdmin {
+  tipo_documento_id: number
+  codigo: string
+  nombre: string
+  longitud: number
+  activo: boolean
+}
+export interface TipoDocumentoInput {
+  codigo: string
+  nombre: string
+  longitud: number
   activo: boolean
 }
 

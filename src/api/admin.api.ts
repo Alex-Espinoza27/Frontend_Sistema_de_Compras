@@ -12,6 +12,8 @@ import type {
   RubroInput,
   TipoComprobanteAdmin,
   TipoComprobanteInput,
+  TipoDocumentoAdmin,
+  TipoDocumentoInput,
   UitInput,
   UitItem,
   UnidadMedidaAdmin,
@@ -29,7 +31,10 @@ export const adminApi = {
     cliente.post<never, { id: number }>('/admin/usuarios-plataforma', body),
   actualizarUsuario: (id: number, body: UsuarioPlataformaInput) =>
     cliente.put<never, null>(`/admin/usuarios-plataforma/${id}`, body),
-  eliminarUsuario: (id: number) => cliente.delete<never, null>(`/admin/usuarios-plataforma/${id}`),
+  desactivarUsuario: (id: number) => cliente.post<never, null>(`/admin/usuarios-plataforma/${id}/desactivar`),
+  activarUsuario: (id: number) => cliente.post<never, null>(`/admin/usuarios-plataforma/${id}/activar`),
+  restablecerPasswordUsuario: (id: number, body?: { password?: string }) =>
+    cliente.post<never, null>(`/admin/usuarios-plataforma/${id}/restablecer-password`, body ?? {}),
 
   // I2 — Proveedores (05C hardening: mantenimiento completo, no solo reactivar)
   proveedores: (params: ListadoParams) =>
@@ -62,6 +67,13 @@ export const adminApi = {
     cliente.post<never, { uit_id: number }>('/admin/uit', body),
   actualizarUit: (id: number, body: UitInput) => cliente.put<never, null>(`/admin/uit/${id}`, body),
 
+  subirPlantillaDjDefecto: (archivo: File) => {
+    const fd = new FormData()
+    fd.append('archivo', archivo)
+    return cliente.post<never, { archivo_id: number; nombre: string }>('/admin/configuracion/plantilla-dj-defecto', fd)
+  },
+  eliminarPlantillaDjDefecto: () => cliente.delete<never, null>('/admin/configuracion/plantilla-dj-defecto'),
+
   // I5 — Catálogos
   rubros: () => cliente.get<never, RubroAdmin[]>('/admin/rubros'),
   crearRubro: (body: RubroInput) => cliente.post<never, { rubro_id: number }>('/admin/rubros', body),
@@ -82,4 +94,10 @@ export const adminApi = {
   estados: () => cliente.get<never, EstadoAdmin[]>('/admin/estados'),
   crearEstado: (body: EstadoInput) => cliente.post<never, { estado_id: number }>('/admin/estados', body),
   actualizarEstado: (id: number, body: EstadoInput) => cliente.put<never, null>(`/admin/estados/${id}`, body),
+
+  tiposDocumento: () => cliente.get<never, TipoDocumentoAdmin[]>('/admin/tipos-documento'),
+  crearTipoDocumento: (body: TipoDocumentoInput) =>
+    cliente.post<never, { tipo_documento_id: number }>('/admin/tipos-documento', body),
+  actualizarTipoDocumento: (id: number, body: TipoDocumentoInput) =>
+    cliente.put<never, null>(`/admin/tipos-documento/${id}`, body),
 }

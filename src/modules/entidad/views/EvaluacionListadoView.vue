@@ -19,16 +19,17 @@ import { hoyTexto } from '@/utils/fechas'
 const { items, paginacion, cargando, params, recargar } = useListado<ConvocatoriaListaItem>(
   convocatoriasApi.index,
   { lista_para_evaluar: 'true', ordenar_por: 'fecha_fin', direccion: 'asc', desde: hoyTexto(), hasta: hoyTexto() },
+  'filtros_evaluacion',
 )
 
 const cabeceras = [
+  { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Número', key: 'numero' },
   { title: 'Nombre', key: 'nombre_servicio', sortable: false },
   { title: 'Estado', key: 'estado', sortable: false },
   { title: 'Cierre de plazo', key: 'fecha_fin' },
   { title: 'N.º ofertas', key: 'total_ofertas', sortable: false },
   { title: 'Progreso', key: 'progreso', sortable: false },
-  { title: '', key: 'acciones', sortable: false },
 ]
 
 // Indicador de avance de evaluación (05C hardening, pedido explícitamente
@@ -47,7 +48,7 @@ function progreso(item: ConvocatoriaListaItem): { texto: string; color: string; 
   <v-container class="py-8">
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Evaluación</div>
-      <v-btn icon color="primary" variant="text" :loading="cargando" @click="recargar()">
+      <v-btn icon color="primary" variant="outlined" :loading="cargando" @click="recargar()">
         <v-icon icon="mdi-refresh" />
         <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
       </v-btn>
@@ -81,17 +82,26 @@ function progreso(item: ConvocatoriaListaItem): { texto: string; color: string; 
       :loading="cargando"
       mensaje-vacio="No hay convocatorias para evaluar."
     >
+      <template #item.acciones="{ item }">
+        <div class="d-flex align-center ga-1">
+          <v-btn
+            :to="`/app/convocatorias/${item.convocatoria_id}/evaluacion`"
+            icon
+            variant="text"
+            size="small"
+            color="primary"
+          >
+            <v-icon icon="mdi-clipboard-check-outline" />
+            <v-tooltip activator="parent" location="top">Ir a Evaluación</v-tooltip>
+          </v-btn>
+        </div>
+      </template>
       <template #item.estado="{ item }"><BaseChipEstado :estado="item.estado" /></template>
       <template #item.fecha_fin="{ item }">{{ dayjs(item.fecha_fin).tz().format('DD/MM/YYYY HH:mm') }}</template>
       <template #item.progreso="{ item }">
         <v-chip :color="progreso(item).color" variant="tonal" size="small" :prepend-icon="progreso(item).icono">
           {{ progreso(item).texto }}
         </v-chip>
-      </template>
-      <template #item.acciones="{ item }">
-        <v-btn :to="`/app/convocatorias/${item.convocatoria_id}/evaluacion`" variant="text" size="small">
-          Ir a Evaluación
-        </v-btn>
       </template>
     </BaseTablaServidor>
   </v-container>

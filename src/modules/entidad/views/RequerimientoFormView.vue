@@ -21,7 +21,7 @@ import type { EntidadListaItem } from '@/modules/muni/muni.types'
 import type { RubroPublico } from '@/modules/publico/publico.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
-import { max, min, requerido } from '@/utils/validaciones'
+import { max, maxLongitud, min, requerido } from '@/utils/validaciones'
 
 interface ErrorApi {
   response?: { status?: number; data?: { mensaje?: string | null; errores?: Record<string, string[]> } }
@@ -43,6 +43,7 @@ const esEdicion = id !== null
 // 05C hardening: ADMINISTRADOR no tiene entidad propia — crea/ve
 // requerimientos "en nombre de" la entidad que elija explícitamente.
 const esEntidad = computed(() => auth.usuario?.rol === 'ENTIDAD')
+const esAdmin = computed(() => auth.usuario?.rol === 'ADMINISTRADOR')
 
 const cargando = ref(true)
 const rubros = ref<RubroPublico[]>([])
@@ -139,14 +140,35 @@ async function cargar() {
 }
 cargar()
 
-const formValido = ref(false)
+const esFormValido = computed(() => {
+  if (esAdmin.value && !form.entidad_id) return false
+  if (!form.tipo) return false
+  if (!form.rubro_ids || form.rubro_ids.length === 0) return false
+  if (!form.objeto || form.objeto.trim() === '' || form.objeto.length > 250) return false
+  if (!form.descripcion || form.descripcion.trim() === '' || form.descripcion.length > 2000) return false
+  if (!form.area_id) return false
+  if (!items || items.length === 0) return false
+
+  for (const item of items) {
+    if (!item.descripcion || item.descripcion.trim() === '' || item.descripcion.length > 500) return false
+    if (!item.unidad_medida_id) return false
+    if (item.cantidad === null || item.cantidad === undefined || item.cantidad < 1 || item.cantidad > 10000000) return false
+  }
+
+  return true
+})
+
+const formRef = ref<HTMLFormElement | null>(null)
 const guardando = ref(false)
 const errorGeneral = ref('')
 const erroresCampo = ref<Record<string, string[]>>({})
 const archivoTdrNuevo = ref<File[]>([])
 
 async function guardar() {
-  if (!formValido.value) return
+  if (!formRef.value) return
+  const { valid } = await formRef.value.validate()
+  if (!valid) return
+
   errorGeneral.value = ''
   erroresCampo.value = {}
   guardando.value = true
@@ -167,9 +189,9 @@ async function guardar() {
       ui.mostrarSnackbar('Requerimiento actualizado.', 'success')
       router.push('/app/requerimientos')
     } else {
-      const { requerimiento_id, numero } = await requerimientosApi.store(cuerpo, nuevoArchivo)
+      const { numero } = await requerimientosApi.store(cuerpo, nuevoArchivo)
       ui.mostrarSnackbar(`Requerimiento ${numero} creado.`, 'success')
-      router.push(`/app/requerimientos/${requerimiento_id}`)
+      router.push('/app/requerimientos')
     }
   } catch (e: unknown) {
     const error = e as ErrorApi
@@ -192,16 +214,18 @@ async function eliminarTdr() {
 </script>
 
 <template>
-  <v-container class="py-8" max-width="900">
+  <v-container class="py-8" max-width="1200">
     <BaseVolver to="/app/requerimientos" texto="Volver a requerimientos" />
     <div class="d-flex align-center ga-3 mb-6">
       <div class="text-h5 text-titulo">{{ esEdicion ? 'Editar requerimiento' : 'Nuevo requerimiento' }}</div>
-      <v-chip v-if="numeroGenerado" color="primary" variant="tonal">{{ numeroGenerado }}</v-chip>
+      <v-chip v-if="numeroGenerado" color="primary" variant="tonal" size="large" class="font-weight-medium">
+        {{ numeroGenerado }}
+      </v-chip>
     </div>
 
     <v-progress-circular v-if="cargando" indeterminate color="primary" />
 
-    <v-form v-else v-model="formValido" @submit.prevent="guardar">
+    <v-form v-else ref="formRef" validate-on="input lazy" @submit.prevent="guardar">
       <v-alert v-if="errorGeneral" type="error" density="compact" class="mb-4">{{ errorGeneral }}</v-alert>
       <v-alert v-if="!esEdicion" type="info" density="compact" class="mb-4">
         El número de requerimiento se asignará automáticamente al guardar.
@@ -209,7 +233,7 @@ async function eliminarTdr() {
 
       <v-card class="pa-4 mb-4">
         <v-row dense>
-          <v-col v-if="!esEntidad" cols="12">
+          <v-col v-if="esAdmin" cols="12">
             <v-select
               v-model="form.entidad_id"
               :items="entidadesAprobadas.map((e) => ({ title: e.razon_social, value: e.entidad_id }))"
@@ -221,28 +245,43 @@ async function eliminarTdr() {
               persistent-hint
             />
           </v-col>
-          <v-col cols="12" sm="6">
-            <v-select
+          <v-col cols="12" md="6" class="mb-2 mb-md-0">
+            <div class="text-caption text-grey-darken-1 mb-1 font-weight-medium">Tipo de requerimiento *</div>
+            <v-btn-toggle
               v-model="form.tipo"
-              :items="[
-                { title: 'Bien', value: 'BIEN' },
-                { title: 'Servicio', value: 'SERVICIO' },
-              ]"
-              label="Tipo *"
-              :rules="[requerido()]"
-              :error-messages="erroresCampo.tipo"
+              mandatory
+              color="primary"
+              variant="outlined"
+              class="w-100 rounded-md"
+              style="height: 49px"
               @update:model-value="alCambiarTipo"
-            />
+            >
+              <v-btn
+                value="BIEN"
+                class="flex-grow-1 text-none font-weight-medium"
+                prepend-icon="mdi-package-variant-closed"
+              >
+                Bien
+              </v-btn>
+              <v-btn
+                value="SERVICIO"
+                class="flex-grow-1 text-none font-weight-medium"
+                prepend-icon="mdi-wrench-outline"
+              >
+                Servicio
+              </v-btn>
+            </v-btn-toggle>
           </v-col>
-          <v-col cols="12" sm="6">
+          <v-col cols="12" md="6" class="pt-md-7">
             <v-autocomplete
               v-model="form.rubro_ids"
               :items="rubrosFiltrados.map((r) => ({ title: r.nombre, value: r.rubro_id }))"
-              label="Rubros"
+              label="Rubros *"
               multiple
               chips
               closable-chips
               :chip-props="{ color: 'primary', variant: 'tonal' }"
+              :rules="[requerido('Seleccione al menos un rubro.')]"
               :error-messages="erroresCampo.rubro_ids"
             />
           </v-col>
@@ -250,7 +289,9 @@ async function eliminarTdr() {
             <v-text-field
               v-model="form.objeto"
               label="Objeto *"
-              :rules="[requerido()]"
+              counter="250"
+              maxlength="250"
+              :rules="[requerido(), maxLongitud(250)]"
               :error-messages="erroresCampo.objeto"
             />
           </v-col>
@@ -258,7 +299,9 @@ async function eliminarTdr() {
             <v-textarea
               v-model="form.descripcion"
               label="Descripción *"
-              :rules="[requerido()]"
+              counter="2000"
+              maxlength="2000"
+              :rules="[requerido(), maxLongitud(2000)]"
               :error-messages="erroresCampo.descripcion"
             />
           </v-col>
@@ -278,7 +321,16 @@ async function eliminarTdr() {
       <v-card class="pa-4 mb-4">
         <div class="d-flex justify-space-between align-center mb-3">
           <div class="text-subtitle-1 text-titulo">Ítems</div>
-          <v-btn variant="text" prepend-icon="mdi-plus" @click="agregarItem">Agregar ítem</v-btn>
+          <v-btn
+            color="primary"
+            variant="outlined"
+            size="small"
+            prepend-icon="mdi-plus"
+            class="font-weight-medium"
+            @click="agregarItem"
+          >
+            Agregar ítem
+          </v-btn>
         </div>
         <v-alert v-if="erroresCampo.items" type="error" density="compact" class="mb-4">
           {{ erroresCampo.items[0] }}
@@ -287,7 +339,12 @@ async function eliminarTdr() {
           <thead>
             <tr>
               <th style="width: 48px">#</th>
-              <th>Descripción *</th>
+              <th>
+                Descripción *
+                <v-icon icon="mdi-information-outline" size="14" class="text-grey ml-1">
+                  <v-tooltip activator="parent" location="top">Máximo 500 caracteres por ítem</v-tooltip>
+                </v-icon>
+              </th>
               <th style="width: 200px">Unidad de medida *</th>
               <th style="width: 120px">Cantidad *</th>
               <th style="width: 180px">Presentación</th>
@@ -298,7 +355,15 @@ async function eliminarTdr() {
             <tr v-for="(item, i) in items" :key="i">
               <td>{{ i + 1 }}</td>
               <td>
-                <v-text-field v-model="item.descripcion" density="compact" hide-details="auto" :rules="[requerido()]" />
+                <v-text-field
+                  v-model="item.descripcion"
+                  maxlength="500"
+                  counter="500"
+                  density="compact"
+                  hide-details="auto"
+                  placeholder="Descripción (máx. 500 caract.)"
+                  :rules="[requerido()]"
+                />
               </td>
               <td>
                 <v-select
@@ -325,6 +390,8 @@ async function eliminarTdr() {
                 <v-text-field
                   v-model="item.presentacion"
                   placeholder="Ej: 500 ml, paquete x12..."
+                  maxlength="120"
+                  counter="120"
                   density="compact"
                   hide-details="auto"
                 />
@@ -351,9 +418,26 @@ async function eliminarTdr() {
         />
       </v-card>
 
-      <div class="d-flex justify-end ga-2">
-        <v-btn variant="text" to="/app/requerimientos">Cancelar</v-btn>
-        <v-btn type="submit" :loading="guardando" :disabled="!formValido">Guardar</v-btn>
+      <div class="d-flex justify-end ga-3 mt-4">
+        <v-btn
+          variant="outlined"
+          color="secondary"
+          to="/app/requerimientos"
+          class="px-6"
+        >
+          Cancelar
+        </v-btn>
+        <v-btn
+          type="submit"
+          color="primary"
+          variant="flat"
+          elevation="2"
+          :loading="guardando"
+          :disabled="!esFormValido"
+          class="px-6"
+        >
+          Guardar
+        </v-btn>
       </div>
     </v-form>
   </v-container>

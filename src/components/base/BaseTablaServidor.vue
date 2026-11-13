@@ -46,3 +46,17 @@ const sortBy = computed<{ key: string; order: 'asc' | 'desc' }[]>({
     </template>
   </v-data-table-server>
 </template>
+
+<style scoped>
+/* Cabecera con un tinte sutil (05C hardening, pedido explícitamente por el
+   usuario: "que no todo sea blanco" pero sin resaltar demasiado). Usa el color
+   `primary` del tema activo con muy baja opacidad, por eso no hace falta una
+   variante aparte para modo oscuro: `--v-theme-primary` ya cambia con el tema. */
+:deep(.v-table__wrapper thead) {
+  background-color: rgb(var(--v-theme-primary) / 0.07);
+}
+:deep(.v-table__wrapper thead th) {
+  font-weight: 700 !important;
+  border-bottom: 2px solid rgb(var(--v-theme-primary) / 0.18) !important;
+}
+</style>

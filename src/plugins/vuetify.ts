@@ -9,6 +9,7 @@ const claro: ThemeDefinition = {
   dark: false,
   colors: {
     primary: '#0090D8',
+    'on-primary': '#FFFFFF',
     secondary: '#0A2947',
     accent: '#2233CE',
     background: '#F5F8FB',

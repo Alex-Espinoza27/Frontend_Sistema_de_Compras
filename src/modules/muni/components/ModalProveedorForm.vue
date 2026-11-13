@@ -87,7 +87,6 @@ const guardando = ref(false)
 const erroresCampo = ref<Record<string, string[]>>({})
 
 async function guardar() {
-  if (!formValido.value) return
   guardando.value = true
   erroresCampo.value = {}
   try {
@@ -110,10 +109,14 @@ async function guardar() {
 </script>
 
 <template>
-  <v-dialog v-model="abierto" max-width="700" scrollable>
-    <v-card>
-      <v-card-title class="text-titulo">{{ proveedorId ? 'Editar proveedor' : 'Nuevo proveedor' }}</v-card-title>
-      <v-card-text>
+  <v-dialog v-model="abierto" max-width="700" scrollable persistent>
+    <v-card class="rounded-lg">
+      <v-card-title class="d-flex align-center justify-space-between pa-4 bg-surface text-titulo font-weight-bold">
+        <span>{{ proveedorId ? 'Editar proveedor' : 'Nuevo proveedor' }}</span>
+        <v-btn icon="mdi-close" variant="text" density="compact" @click="abierto = false" />
+      </v-card-title>
+      <v-divider />
+      <v-card-text class="pa-4">
         <v-progress-circular v-if="cargando" indeterminate color="primary" />
         <v-form v-else v-model="formValido">
           <v-row dense>
@@ -198,10 +201,10 @@ async function guardar() {
           </v-row>
         </v-form>
       </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn variant="text" @click="abierto = false">Cancelar</v-btn>
-        <v-btn :loading="guardando" :disabled="!formValido" @click="guardar">Guardar</v-btn>
+      <v-divider />
+      <v-card-actions class="pa-4 bg-surface d-flex justify-end ga-2">
+        <v-btn variant="outlined" color="secondary" class="px-5" @click="abierto = false">Cancelar</v-btn>
+        <v-btn color="primary" variant="flat" elevation="2" class="px-6" :loading="guardando" @click="guardar">Guardar</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

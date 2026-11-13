@@ -52,6 +52,9 @@ export interface RequerimientoListaItem {
   numero: string
   objeto: string
   tipo: TipoRequerimiento
+  /** Desactivar en vez de eliminar (05C hardening, pedido explícitamente por
+   * el usuario, mismo patrón que Usuarios/Proveedores/Catálogos/Roles). */
+  activo: boolean
   area: AreaRef | null
   entidad: EntidadRefSigla
   fecha_creacion: string
@@ -141,6 +144,11 @@ export interface ConvocatoriaDetalle {
   nombre_servicio: string
   fecha_inicio: string
   fecha_fin: string
+  /** Solo control interno de la entidad (05C hardening, pedido
+   * explícitamente por el usuario): valor de `fecha_fin` justo antes de la
+   * última ampliación de plazo; `null` si nunca se amplió. Nunca se expone
+   * en el portal público. */
+  fecha_fin_anterior: string | null
   estado: Estado
   motivo_cierre: string | null
   fecha_publicacion: string | null

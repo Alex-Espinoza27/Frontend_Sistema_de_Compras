@@ -4,9 +4,9 @@
  * o de plugins/vuetify.ts (05D §10.1/§10.4).
  */
 :root {
-  /* Tipografía (05D §3) */
-  --font-titulo: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-cuerpo: 'Inter', system-ui, sans-serif;
+  /* Tipografía — Nunito como fuente global */
+  --font-titulo: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-cuerpo: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-datos: 'JetBrains Mono', monospace;
 
   /* Forma (05D §4) */

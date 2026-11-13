@@ -17,6 +17,11 @@ export function email(mensaje = 'Ingrese un correo válido.'): Regla {
   return (valor) => !valor || patron.test(String(valor)) || mensaje
 }
 
+export function colorHex(mensaje = 'Debe ser un color hexadecimal, ej. #0090D8.'): Regla {
+  const patron = /^#[0-9A-Fa-f]{6}$/
+  return (valor) => !valor || patron.test(String(valor)) || mensaje
+}
+
 export function min(limite: number, mensaje?: string): Regla {
   return (valor) =>
     valor === null || valor === undefined || valor === ''
@@ -30,3 +35,11 @@ export function max(limite: number, mensaje?: string): Regla {
       ? true
       : Number(valor) <= limite || (mensaje ?? `El valor máximo es ${limite}.`)
 }
+
+export function maxLongitud(limite: number, mensaje?: string): Regla {
+  return (valor) =>
+    valor === null || valor === undefined || valor === ''
+      ? true
+      : String(valor).length <= limite || (mensaje ?? `El máximo es de ${limite} caracteres.`)
+}
+

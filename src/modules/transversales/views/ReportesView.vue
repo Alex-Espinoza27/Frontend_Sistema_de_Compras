@@ -31,7 +31,9 @@ import type { ReporteFila, TipoReporte } from '@/modules/transversales/transvers
 import { useAuthStore } from '@/stores/auth.store'
 
 const auth = useAuthStore()
+const esAdmin = auth.usuario?.rol === 'ADMINISTRADOR'
 const esEntidad = auth.usuario?.rol === 'ENTIDAD'
+const entidadAsignada = computed(() => (auth.perfil?.tipo === 'ENTIDAD' ? auth.perfil.entidad : null))
 
 const opcionesTipo: { title: string; value: TipoReporte }[] = [
   { title: 'Adjudicación', value: 'ADJUDICACION' },
@@ -159,7 +161,7 @@ const tipo = ref<TipoReporte>('ADJUDICACION')
 const filtros = reactive({
   desde: '',
   hasta: '',
-  entidad_id: null as number | null,
+  entidad_id: (esAdmin ? null : (entidadAsignada.value?.entidad_id ?? null)) as number | null,
   area_id: null as number | null,
   proveedor_id: null as number | null,
   estado: null as string | null,
@@ -177,7 +179,7 @@ const proveedores = ref<ProveedorAdminItem[]>([])
 const rubros = ref<RubroPublico[]>([])
 const tiposComprobante = ref<TipoComprobanteAdmin[]>([])
 const areas = ref<AreaItem[]>([])
-if (!esEntidad) {
+if (esAdmin) {
   entidadesApi.index({ ordenar_por: 'razon_social', por_pagina: 100 }).then((data) => (entidades.value = data.items))
 }
 adminApi.proveedores({ por_pagina: 100 }).then((data) => (proveedores.value = data.items))
@@ -323,13 +325,21 @@ function filtrosActuales() {
       <v-select v-model="tipo" :items="opcionesTipo" label="Tipo de reporte" style="max-width: 200px" />
       <BaseRangoFechas v-model:desde="filtros.desde" v-model:hasta="filtros.hasta" style="max-width: 260px" @aplicar="buscar" />
       <v-select
-        v-if="!esEntidad"
+        v-if="esAdmin"
         v-model="filtros.entidad_id"
         :items="entidades.map((e) => ({ title: e.razon_social, value: e.entidad_id }))"
         label="Entidad"
         clearable
         style="max-width: 220px"
         @update:model-value="buscar"
+      />
+      <v-text-field
+        v-else-if="entidadAsignada"
+        :model-value="entidadAsignada.razon_social"
+        label="Entidad asignada"
+        prepend-inner-icon="mdi-domain"
+        readonly
+        style="max-width: 260px"
       />
       <v-select
         v-if="tiposConvocatoria.includes(tipo)"

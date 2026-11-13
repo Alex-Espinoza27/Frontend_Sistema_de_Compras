@@ -87,6 +87,7 @@ export interface RegistroProveedorInput {
 
 export interface RecuperarPasswordInput {
   email: string
+  captcha: string
 }
 
 export interface RestablecerPasswordInput {

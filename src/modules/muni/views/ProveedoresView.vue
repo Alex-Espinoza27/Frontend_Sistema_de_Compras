@@ -18,12 +18,20 @@ const ui = useUiStore()
 const { items, paginacion, cargando, params, recargar } = useListado<ProveedorAdminItem>(adminApi.proveedores, {})
 
 const cabeceras = [
+  { title: 'Acciones', key: 'acciones', sortable: false },
+  { title: 'Estado', key: 'estado', sortable: false },
   { title: 'RUC/DNI', key: 'numero_documento', sortable: false },
+  { title: 'Tipo', key: 'tipo_persona', sortable: false },
   { title: 'Razón social', key: 'razon_social' },
   { title: 'Correo', key: 'correo', sortable: false },
-  { title: 'Estado', key: 'estado', sortable: false },
-  { title: '', key: 'acciones', sortable: false },
+  { title: 'Teléfono', key: 'telefono', sortable: false },
+  { title: 'Contacto', key: 'persona_contacto', sortable: false },
 ]
+
+const coloresTipoPersona: Record<string, string> = {
+  JURIDICA: 'secondary',
+  NATURAL: 'info',
+}
 
 const modalAbierto = ref(false)
 const proveedorSeleccionado = ref<number | null>(null)
@@ -68,7 +76,15 @@ async function confirmarCambioEstado() {
   <v-container class="py-8">
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Proveedores</div>
-      <v-btn prepend-icon="mdi-plus" @click="abrirNuevo">Nuevo proveedor</v-btn>
+      <div class="d-flex ga-2">
+        <v-btn icon color="primary" variant="outlined" :loading="cargando" @click="recargar()">
+          <v-icon icon="mdi-refresh" />
+          <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
+        </v-btn>
+        <v-btn color="primary" variant="flat" elevation="2" class="font-weight-medium px-5" @click="abrirNuevo">
+          Nuevo proveedor
+        </v-btn>
+      </div>
     </div>
 
     <div class="d-flex flex-wrap ga-4 mb-4">
@@ -103,22 +119,50 @@ async function confirmarCambioEstado() {
       :loading="cargando"
       mensaje-vacio="No hay proveedores registrados."
     >
-      <template #item.estado="{ item }"><BaseChipEstado :estado="item.estado" /></template>
       <template #item.acciones="{ item }">
-        <v-btn variant="text" size="small" @click="abrirEditar(item.proveedor_id)">Editar</v-btn>
-        <v-btn
-          v-if="item.estado.codigo === 'ACTIVO'"
-          variant="text"
-          size="small"
-          color="error"
-          @click="pedirCambioEstado(item.proveedor_id, 'suspender')"
-        >
-          Suspender
-        </v-btn>
-        <v-btn v-else variant="text" size="small" @click="pedirCambioEstado(item.proveedor_id, 'reactivar')">
-          Reactivar
-        </v-btn>
+        <div class="d-flex align-center ga-1">
+          <v-btn icon variant="text" size="small" color="primary" @click="abrirEditar(item.proveedor_id)">
+            <v-icon icon="mdi-pencil-outline" />
+            <v-tooltip activator="parent" location="top">Editar proveedor</v-tooltip>
+          </v-btn>
+          <v-btn
+            v-if="item.estado.codigo === 'ACTIVO'"
+            icon
+            variant="text"
+            size="small"
+            color="error"
+            @click="pedirCambioEstado(item.proveedor_id, 'suspender')"
+          >
+            <v-icon icon="mdi-account-off-outline" />
+            <v-tooltip activator="parent" location="top">Suspender proveedor</v-tooltip>
+          </v-btn>
+          <v-btn
+            v-else
+            icon
+            variant="text"
+            size="small"
+            color="success"
+            @click="pedirCambioEstado(item.proveedor_id, 'reactivar')"
+          >
+            <v-icon icon="mdi-account-check-outline" />
+            <v-tooltip activator="parent" location="top">Reactivar proveedor</v-tooltip>
+          </v-btn>
+        </div>
       </template>
+      <template #item.estado="{ item }"><BaseChipEstado :estado="item.estado" /></template>
+      <template #item.numero_documento="{ item }">
+        <div class="d-flex align-center ga-2">
+          <v-chip size="x-small" variant="outlined" rounded="pill" color="grey">{{ item.tipo_documento }}</v-chip>
+          <span class="text-datos">{{ item.numero_documento }}</span>
+        </div>
+      </template>
+      <template #item.tipo_persona="{ item }">
+        <v-chip size="small" variant="tonal" rounded="pill" :color="coloresTipoPersona[item.tipo_persona] ?? 'grey'">
+          {{ item.tipo_persona === 'JURIDICA' ? 'Jurídica' : 'Natural' }}
+        </v-chip>
+      </template>
+      <template #item.telefono="{ item }">{{ item.telefono ?? '—' }}</template>
+      <template #item.persona_contacto="{ item }">{{ item.persona_contacto ?? '—' }}</template>
     </BaseTablaServidor>
 
     <ModalProveedorForm v-model:abierto="modalAbierto" :proveedor-id="proveedorSeleccionado" @guardado="recargar" />

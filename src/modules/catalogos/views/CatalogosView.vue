@@ -5,6 +5,7 @@ import { ref } from 'vue'
 
 import CatalogoRubros from '../components/CatalogoRubros.vue'
 import CatalogoTiposComprobante from '../components/CatalogoTiposComprobante.vue'
+import CatalogoTiposDocumento from '../components/CatalogoTiposDocumento.vue'
 import CatalogoUnidadesMedida from '../components/CatalogoUnidadesMedida.vue'
 
 const sub = ref('rubros')
@@ -18,10 +19,12 @@ const sub = ref('rubros')
       <v-tab value="rubros">Rubros</v-tab>
       <v-tab value="unidades">Unidades de medida</v-tab>
       <v-tab value="comprobantes">Tipos de comprobante</v-tab>
+      <v-tab value="documentos">Tipos de documento</v-tab>
     </v-tabs>
 
     <CatalogoRubros v-if="sub === 'rubros'" />
     <CatalogoUnidadesMedida v-else-if="sub === 'unidades'" />
     <CatalogoTiposComprobante v-else-if="sub === 'comprobantes'" />
+    <CatalogoTiposDocumento v-else-if="sub === 'documentos'" />
   </v-container>
 </template>

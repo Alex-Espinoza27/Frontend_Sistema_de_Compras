@@ -63,7 +63,7 @@ async function guardar() {
 <template>
   <v-container class="py-8" max-width="720">
     <BaseVolver to="/app/entidades" texto="Volver a entidades" />
-    <div class="text-h5 text-titulo mb-6">Alta directa de entidad</div>
+    <div class="text-h5 text-titulo mb-6">Registrar nueva entidad</div>
 
     <v-alert v-if="errorGeneral" type="error" density="compact" class="mb-4">{{ errorGeneral }}</v-alert>
 
@@ -125,8 +125,8 @@ async function guardar() {
     </v-card>
 
     <div class="d-flex justify-end ga-2">
-      <v-btn variant="text" to="/app/entidades">Cancelar</v-btn>
-      <v-btn :loading="guardando" @click="guardar">Registrar</v-btn>
+      <v-btn variant="outlined" color="secondary" class="px-5" to="/app/entidades">Cancelar</v-btn>
+      <v-btn color="primary" variant="flat" elevation="2" class="px-6" :loading="guardando" @click="guardar">Registrar</v-btn>
     </div>
   </v-container>
 </template>

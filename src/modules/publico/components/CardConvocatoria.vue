@@ -54,13 +54,11 @@ const etiquetaTdr = computed(() =>
   props.convocatoria.tipo === 'SERVICIO' ? 'Descargar Especificaciones Técnicas' : 'Descargar Términos de Referencia',
 )
 
-// Motivo/resultado visibles directamente en la card, sin abrir el detalle
-// (05C hardening, pedido explícitamente por el usuario — antes solo se veían
-// al abrir el modal "Ver motivo").
+// Motivo de cierre visible directamente en la card para DESIERTA y CANCELADA
+// (para ADJUDICADA el detalle se consulta en el documento de resultados)
 const fraseResultado = computed(() => {
   const c = props.convocatoria
-  if (c.resultado_resumen) return c.resultado_resumen
-  if (c.motivo_cierre) {
+  if (c.motivo_cierre && (c.estado.codigo === 'DESIERTA' || c.estado.codigo === 'CANCELADA')) {
     return `La convocatoria fue declarada ${c.estado.nombre.toUpperCase()} por el motivo siguiente: ${c.motivo_cierre}`
   }
   return null
@@ -94,77 +92,181 @@ const venceEnTexto = computed(() => {
 </script>
 
 <template>
-  <v-card class="pa-6" rounded="lg">
-    <v-row no-gutters>
-      <!-- Nombre del servicio: 66% del ancho (md=8/12) para que nunca se corte -->
-      <v-col cols="12" md="8" class="pr-md-4 mb-4 mb-md-0">
-        <div class="d-flex align-center flex-wrap ga-2 mb-1">
-          <span class="text-datos">{{ convocatoria.numero ?? '—' }}</span>
-          <v-icon
-            v-if="convocatoria.es_urgente"
-            icon="mdi-alert-circle-outline"
-            color="accent"
-            size="18"
-          />
-          <v-chip :color="convocatoria.tipo === 'BIEN' ? 'accent' : 'primary'" variant="flat" size="small">
+  <v-card
+    class="pa-5 card-convocatoria"
+    :class="{ 'card-convocatoria--urgente': convocatoria.es_urgente }"
+    rounded="lg"
+  >
+    <v-row align="center">
+      <!-- Columna Principal: Código, Tipo, Título y TDR (md=7, lg=7) -->
+      <v-col cols="12" md="7" class="pr-md-4">
+        <!-- Badges superiores -->
+        <div class="d-flex align-center flex-wrap ga-2 mb-2">
+          <!-- Número de Convocatoria (Alto contraste en claro y oscuro) -->
+          <v-chip
+            variant="tonal"
+            size="small"
+            color="primary"
+            class="font-datos font-weight-bold chip-codigo"
+          >
+            <v-icon icon="mdi-pound" size="14" class="mr-1" />
+            {{ convocatoria.numero ?? 'S/N' }}
+          </v-chip>
+
+          <!-- Tipo Bien / Servicio -->
+          <v-chip
+            :color="convocatoria.tipo === 'BIEN' ? 'accent' : 'primary'"
+            variant="tonal"
+            size="small"
+            class="font-weight-medium"
+          >
+            <v-icon
+              :icon="convocatoria.tipo === 'BIEN' ? 'mdi-package-variant-closed' : 'mdi-account-wrench-outline'"
+              size="15"
+              class="mr-1"
+            />
             {{ convocatoria.tipo === 'BIEN' ? 'Bien' : 'Servicio' }}
           </v-chip>
+
+          <!-- Sigla de la Entidad (si viene) -->
+          <v-chip
+            v-if="convocatoria.entidad?.sigla"
+            variant="outlined"
+            size="small"
+            color="grey"
+          >
+            <v-icon icon="mdi-city-variant-outline" size="14" class="mr-1" />
+            {{ convocatoria.entidad.sigla }}
+          </v-chip>
+
+          <!-- Chip de Urgencia -->
+          <v-chip
+            v-if="convocatoria.es_urgente"
+            color="warning"
+            variant="flat"
+            size="small"
+            class="font-weight-bold animate-pulse"
+          >
+            <v-icon icon="mdi-fire" size="16" class="mr-1" />
+            ¡Cierra pronto!
+          </v-chip>
         </div>
-        <div class="text-titulo text-h6 mb-2">{{ convocatoria.nombre_servicio }}</div>
 
-        <div v-if="fraseResultado" class="text-body-2 text-grey mb-2">{{ fraseResultado }}</div>
+        <!-- Título del Requerimiento / Servicio -->
+        <div class="text-titulo text-h6 font-weight-bold mb-2 servicio-titulo">
+          {{ convocatoria.nombre_servicio }}
+        </div>
 
-        <v-btn
-          v-if="convocatoria.archivo_tdr"
-          variant="text"
-          size="small"
+        <!-- Frase de resultado o motivo (si existe) -->
+        <v-alert
+          v-if="fraseResultado"
           density="compact"
-          class="pl-0"
-          prepend-icon="mdi-file-download-outline"
-          :loading="descargandoTdr"
-          @click="descargarTdr"
+          variant="tonal"
+          color="info"
+          class="mb-3 rounded-md text-body-2"
+          icon="mdi-information-outline"
         >
-          {{ etiquetaTdr }}
-        </v-btn>
+          {{ fraseResultado }}
+        </v-alert>
+
+        <!-- Botón de Descarga TDR / Especificaciones Técnicas -->
+        <div v-if="convocatoria.archivo_tdr" class="d-flex align-center mt-2">
+          <v-btn
+            variant="outlined"
+            size="small"
+            color="primary"
+            class="tdr-btn px-3"
+            prepend-icon="mdi-file-download-outline"
+            :loading="descargandoTdr"
+            @click="descargarTdr"
+          >
+            {{ etiquetaTdr }}
+            <v-tooltip activator="parent" location="top">
+              Descargar archivo adjunto: {{ convocatoria.archivo_tdr.nombre }}
+            </v-tooltip>
+          </v-btn>
+        </div>
       </v-col>
 
-      <!-- Fechas -->
-      <v-col cols="6" md="2" class="mb-4 mb-md-0">
-        <div v-if="convocatoria.fecha_publicacion" class="text-body-2 text-grey">
-          Publicación: {{ dayjs(convocatoria.fecha_publicacion).tz().format('DD/MM/YYYY') }}
-        </div>
-        <div class="text-body-2 text-grey">
-          Postular hasta: {{ dayjs(convocatoria.fecha_fin).tz().format('DD/MM/YYYY') }}
-          {{ dayjs(convocatoria.fecha_fin).tz().format('HH:mm') }}h
-        </div>
-        <div v-if="venceEnTexto" class="text-body-2 font-weight-medium" :class="convocatoria.es_urgente ? 'text-accent' : 'text-primary'">
-          {{ venceEnTexto }}
+      <!-- Columna de Fechas y Cronograma (md=3, lg=3) -->
+      <v-col cols="12" sm="6" md="3" class="my-2 my-md-0">
+        <div class="cronograma-box pa-3">
+          <div class="text-caption font-weight-bold text-uppercase text-grey mb-2 d-flex align-center ga-1">
+            <v-icon icon="mdi-clock-outline" size="14" />
+            <span>Cronograma del Proceso</span>
+          </div>
+
+          <!-- Publicación con fecha y hora completa -->
+          <div v-if="convocatoria.fecha_publicacion" class="d-flex align-center text-caption mb-1">
+            <v-icon icon="mdi-calendar-check-outline" size="15" class="mr-1 text-primary" />
+            <span class="text-grey font-weight-medium">
+              Pub: <strong class="text-on-surface">{{ dayjs(convocatoria.fecha_publicacion).tz().format('DD/MM/YYYY HH:mm') }}h</strong>
+            </span>
+          </div>
+
+          <!-- Cierre / Fin con fecha y hora completa -->
+          <div class="d-flex align-center text-caption mb-1">
+            <v-icon icon="mdi-calendar-clock-outline" size="15" class="mr-1 text-error" />
+            <span class="text-grey font-weight-medium">
+              Fin: <strong class="text-on-surface">{{ dayjs(convocatoria.fecha_fin).tz().format('DD/MM/YYYY HH:mm') }}h</strong>
+            </span>
+          </div>
+
+          <div
+            v-if="venceEnTexto"
+            class="d-inline-flex align-center text-caption font-weight-bold px-2 py-1 rounded mt-1"
+            :class="convocatoria.es_urgente ? 'vence-alerta' : 'vence-normal'"
+          >
+            <v-icon icon="mdi-timer-sand-complete" size="13" class="mr-1" />
+            <span>{{ venceEnTexto }}</span>
+          </div>
         </div>
       </v-col>
 
-      <!-- Estado + acción -->
-      <v-col cols="6" md="2" class="d-flex flex-column align-end ga-2">
-        <BaseChipEstado :estado="convocatoria.estado" size="large" />
+      <!-- Columna de Estado y Acción Principal (md=2, lg=2) -->
+      <v-col cols="12" sm="6" md="2" class="d-flex flex-column align-end justify-center ga-2">
+        <BaseChipEstado :estado="convocatoria.estado" size="large" class="estado-destacado" />
 
         <template v-if="convocatoria.accion === 'POSTULAR'">
           <v-btn
             v-if="auth.usuario?.rol === 'PROVEEDOR'"
             :to="`/app/postular/${convocatoria.convocatoria_id}`"
-            size="small"
+            size="default"
+            color="primary"
+            variant="flat"
+            elevation="2"
             block
             class="boton-ajustable"
+            prepend-icon="mdi-send-check-outline"
           >
             Postular
           </v-btn>
-          <v-btn v-else-if="!auth.autenticado" :to="rutaLogin" variant="tonal" size="small" block class="boton-ajustable">
+          <v-btn
+            v-else-if="!auth.autenticado"
+            :to="rutaLogin"
+            variant="tonal"
+            color="primary"
+            size="small"
+            block
+            class="boton-ajustable"
+            prepend-icon="mdi-login"
+          >
             Inicia sesión para postular
           </v-btn>
           <template v-else>
-            <v-btn variant="tonal" size="small" block class="boton-ajustable" @click="irALoginParaPostular">
+            <v-btn
+              variant="tonal"
+              color="primary"
+              size="small"
+              block
+              class="boton-ajustable"
+              prepend-icon="mdi-account-switch"
+              @click="irALoginParaPostular"
+            >
               Iniciar sesión
             </v-btn>
             <div class="text-caption text-grey text-right">
-              Solo los proveedores registrados pueden postular.
+              Solo proveedores registrados pueden cotizar.
             </div>
           </template>
         </template>
@@ -173,10 +275,10 @@ const venceEnTexto = computed(() => {
           v-else-if="convocatoria.accion === 'YA_POSTULADO'"
           variant="tonal"
           color="success"
-          size="small"
+          size="default"
           block
-          class="boton-ajustable"
-          prepend-icon="mdi-check-circle-outline"
+          class="boton-ajustable font-weight-bold"
+          prepend-icon="mdi-check-decagram-outline"
           to="/app/mis-postulaciones"
         >
           Ya postulaste
@@ -186,9 +288,9 @@ const venceEnTexto = computed(() => {
           v-else-if="convocatoria.accion === 'VER_POSTULACION' && convocatoria.oferta_id"
           variant="tonal"
           color="primary"
-          size="small"
+          size="default"
           block
-          class="boton-ajustable"
+          class="boton-ajustable font-weight-bold"
           prepend-icon="mdi-file-eye-outline"
           :to="`/app/mis-postulaciones/${convocatoria.oferta_id}`"
         >
@@ -197,10 +299,13 @@ const venceEnTexto = computed(() => {
 
         <v-btn
           v-else-if="convocatoria.accion === 'RESULTADOS'"
-          variant="tonal"
-          size="small"
+          variant="flat"
+          color="primary"
+          size="default"
+          elevation="2"
           block
-          class="boton-ajustable"
+          class="boton-ajustable boton-resultados font-weight-bold"
+          prepend-icon="mdi-file-chart-outline"
           :loading="cargando"
           @click="verResultados"
         >
@@ -209,10 +314,12 @@ const venceEnTexto = computed(() => {
 
         <v-btn
           v-else-if="convocatoria.accion === 'MOTIVO'"
-          variant="tonal"
-          size="small"
+          variant="outlined"
+          color="grey"
+          size="default"
           block
-          class="boton-ajustable"
+          class="boton-ajustable font-weight-bold"
+          prepend-icon="mdi-text-box-search-outline"
           @click="emit('ver-motivo', convocatoria.convocatoria_id)"
         >
           Ver motivo
@@ -223,23 +330,75 @@ const venceEnTexto = computed(() => {
 </template>
 
 <style scoped>
-/* El texto de los botones de acción puede ser más ancho que la columna
-   angosta donde viven (05C hardening, pedido explícitamente por el usuario
-   — antes se salía del borde en pantallas medias); se permite salto de
-   línea en vez de desbordar. El chip de estado usa el mismo tratamiento,
-   pero ya lo trae `BaseChipEstado.vue` de fábrica.
+.card-convocatoria {
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity, 1));
+}
 
-   `min-height` cubre el caso de 2 líneas (ej. "Ver resultados"/
-   "Ver documento" no siempre entran en una sola línea en esta columna
-   angosta, a diferencia de "Ver motivo") y se aplica siempre, para que
-   todas las cards de una misma lista tengan el botón a la misma altura
-   en vez de saltar entre alto/bajo según el texto de cada una (05C
-   hardening, pedido explícitamente por el usuario). */
+.card-convocatoria:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-2);
+  border-color: rgba(var(--v-theme-primary), 0.5);
+}
+
+.card-convocatoria--urgente {
+  border-left: 5px solid rgb(var(--v-theme-warning)) !important;
+}
+
+.servicio-titulo {
+  line-height: 1.4;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.cronograma-box {
+  background: rgba(var(--v-theme-surface-variant), 0.5);
+  border: 1px solid rgba(var(--v-border-color), 0.6);
+  border-radius: 16px !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.chip-codigo {
+  border: 1px solid rgba(var(--v-theme-primary), 0.35);
+  letter-spacing: 0.5px;
+}
+
+.estado-destacado {
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+}
+
+.estado-destacado :deep(.v-chip__content) {
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px;
+}
+
+.vence-normal {
+  background: rgba(var(--v-theme-primary), 0.1);
+  color: rgb(var(--v-theme-primary));
+}
+
+.vence-alerta {
+  background: rgba(var(--v-theme-warning), 0.15);
+  color: rgb(var(--v-theme-warning));
+  font-weight: 700;
+}
+
+.tdr-btn {
+  text-transform: none;
+  font-weight: 600;
+}
+
 .boton-ajustable {
   height: auto !important;
-  min-height: 52px;
+  min-height: 44px;
   white-space: normal;
+  text-transform: none;
+  font-weight: 600;
 }
+
 .boton-ajustable :deep(.v-btn__content) {
   white-space: normal;
   text-align: center;

@@ -18,11 +18,15 @@ import { hoyTexto } from '@/utils/fechas'
 
 // El filtro de fecha arranca marcado en "Hoy" (05C hardening, pedido
 // explícitamente por el usuario).
-const { items, paginacion, cargando, params, recargar } = useListado<AuditoriaListaItem>(auditoriaApi.index, {
-  direccion: 'desc',
-  desde: hoyTexto(),
-  hasta: hoyTexto(),
-})
+const { items, paginacion, cargando, params, recargar } = useListado<AuditoriaListaItem>(
+  auditoriaApi.index,
+  {
+    direccion: 'desc',
+    desde: hoyTexto(),
+    hasta: hoyTexto(),
+  },
+  'filtros_auditoria',
+)
 
 const opcionesAccion = [
   { title: 'Login', value: 'LOGIN' },
@@ -51,13 +55,13 @@ const opcionesModulo = [
 // ordenar_por, 05C hardening); solo "Fecha" es realmente ordenable — el
 // resto no tiene ningún campo de orden propio en el backend.
 const cabeceras = [
+  { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Fecha', key: 'fecha' },
   { title: 'Usuario', key: 'usuario', sortable: false },
   { title: 'Módulo', key: 'modulo', sortable: false },
   { title: 'Acción', key: 'accion', sortable: false },
   { title: 'Tabla', key: 'tabla', sortable: false },
   { title: 'IP', key: 'ip', sortable: false },
-  { title: '', key: 'acciones', sortable: false },
 ]
 
 const detalleAbierto = ref(false)
@@ -83,15 +87,23 @@ function exportar() {
   <v-container class="py-8" fluid>
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Auditoría</div>
-      <v-btn
-        variant="tonal"
-        prepend-icon="mdi-file-excel-outline"
-        :loading="exportando"
-        :disabled="exportando"
-        @click="exportar"
-      >
-        Excel
-      </v-btn>
+      <div class="d-flex ga-2">
+        <v-btn icon color="primary" variant="outlined" :loading="cargando" @click="recargar()">
+          <v-icon icon="mdi-refresh" />
+          <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
+        </v-btn>
+        <v-btn
+          color="success"
+          variant="outlined"
+          prepend-icon="mdi-file-excel-outline"
+          class="font-weight-medium px-4"
+          :loading="exportando"
+          :disabled="exportando"
+          @click="exportar"
+        >
+          Excel
+        </v-btn>
+      </div>
     </div>
 
     <div class="d-flex flex-wrap ga-4 mb-4">
@@ -150,17 +162,32 @@ function exportar() {
       item-value="auditoria_id"
       mensaje-vacio="No hay registros para estos filtros."
     >
+      <template #item.acciones="{ item }">
+        <div class="d-flex align-center ga-1">
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            color="primary"
+            @click="verDetalle(item.auditoria_id)"
+          >
+            <v-icon icon="mdi-eye-outline" />
+            <v-tooltip activator="parent" location="top">Ver detalle</v-tooltip>
+          </v-btn>
+        </div>
+      </template>
       <template #item.fecha="{ item }">{{ dayjs(item.fecha).format('DD/MM/YYYY HH:mm') }}</template>
       <template #item.usuario="{ item }">{{ item.usuario?.nombre ?? '—' }}</template>
-      <template #item.acciones="{ item }">
-        <v-btn variant="text" size="small" @click="verDetalle(item.auditoria_id)">Ver detalle</v-btn>
-      </template>
     </BaseTablaServidor>
 
-    <v-dialog v-model="detalleAbierto" max-width="720">
-      <v-card>
-        <v-card-title class="text-titulo">Detalle de auditoría</v-card-title>
-        <v-card-text>
+    <v-dialog v-model="detalleAbierto" max-width="720" persistent>
+      <v-card class="rounded-lg">
+        <v-card-title class="d-flex align-center justify-space-between pa-4 bg-surface text-titulo font-weight-bold">
+          <span>Detalle de auditoría</span>
+          <v-btn icon="mdi-close" variant="text" density="compact" @click="detalleAbierto = false" />
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-4">
           <v-progress-circular v-if="cargandoDetalle" indeterminate color="primary" />
           <template v-else-if="detalle">
             <v-row dense class="text-body-2 mb-4">
@@ -175,16 +202,16 @@ function exportar() {
               <v-col cols="12">User-Agent: {{ detalle.user_agent ?? '—' }}</v-col>
             </v-row>
 
-            <div class="text-subtitle-2 mb-1">Valor anterior</div>
-            <pre class="text-datos pa-2 mb-4 bg-surface-variant rounded">{{ JSON.stringify(detalle.valor_anterior, null, 2) ?? '—' }}</pre>
+            <div class="text-subtitle-2 mb-1 font-weight-medium">Valor anterior</div>
+            <pre class="text-datos pa-3 mb-4 bg-surface-variant rounded-md">{{ JSON.stringify(detalle.valor_anterior, null, 2) ?? '—' }}</pre>
 
-            <div class="text-subtitle-2 mb-1">Valor nuevo</div>
-            <pre class="text-datos pa-2 bg-surface-variant rounded">{{ JSON.stringify(detalle.valor_nuevo, null, 2) ?? '—' }}</pre>
+            <div class="text-subtitle-2 mb-1 font-weight-medium">Valor nuevo</div>
+            <pre class="text-datos pa-3 bg-surface-variant rounded-md">{{ JSON.stringify(detalle.valor_nuevo, null, 2) ?? '—' }}</pre>
           </template>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="detalleAbierto = false">Cerrar</v-btn>
+        <v-divider />
+        <v-card-actions class="pa-4 bg-surface d-flex justify-end">
+          <v-btn variant="outlined" color="secondary" class="px-5" @click="detalleAbierto = false">Cerrar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

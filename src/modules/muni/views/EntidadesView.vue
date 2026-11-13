@@ -27,13 +27,15 @@ const opcionesEstado = [
 // `sortable` refleja lo que soporta `EntidadController::index`
 // (razon_social/fecha_solicitud, 05C hardening).
 const cabeceras = [
+  { title: 'Acciones', key: 'acciones', sortable: false },
+  { title: 'Estado', key: 'estado', sortable: false },
   { title: 'RUC', key: 'numero_documento', sortable: false },
   { title: 'Razón social', key: 'razon_social' },
   { title: 'Sigla', key: 'sigla', sortable: false },
-  { title: 'Estado', key: 'estado', sortable: false },
+  { title: 'Correo', key: 'correo', sortable: false },
+  { title: 'Teléfono', key: 'telefono', sortable: false },
   { title: 'Fecha de solicitud', key: 'fecha_solicitud' },
   { title: 'N.º convocatorias', key: 'convocatorias_total', sortable: false },
-  { title: '', key: 'acciones', sortable: false },
 ]
 
 // --- Observar / Rechazar (motivo obligatorio) -------------------------------
@@ -76,7 +78,21 @@ async function reactivar(id: number) {
   <v-container class="py-8">
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Entidades</div>
-      <v-btn to="/app/entidades/nueva" prepend-icon="mdi-plus">Alta directa</v-btn>
+      <div class="d-flex ga-2">
+        <v-btn icon color="primary" variant="outlined" :loading="cargando" @click="recargar()">
+          <v-icon icon="mdi-refresh" />
+          <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
+        </v-btn>
+        <v-btn
+          to="/app/entidades/nueva"
+          color="primary"
+          variant="flat"
+          elevation="2"
+          class="font-weight-medium px-5"
+        >
+          Nueva entidad
+        </v-btn>
+      </div>
     </div>
 
     <div class="d-flex flex-wrap ga-4 mb-4">
@@ -109,6 +125,11 @@ async function reactivar(id: number) {
       mensaje-vacio="No hay entidades registradas."
     >
       <template #item.estado="{ item }"><BaseChipEstado :estado="item.estado" /></template>
+      <template #item.correo="{ item }">{{ item.correo ?? '—' }}</template>
+      <template #item.telefono="{ item }">{{ item.telefono ?? '—' }}</template>
+      <template #item.convocatorias_total="{ item }">
+        <v-chip size="small" variant="tonal" rounded="pill" color="primary">{{ item.convocatorias_total }}</v-chip>
+      </template>
       <template #item.acciones="{ item }">
         <template v-if="['SOLICITADA', 'OBSERVADA'].includes(item.estado.codigo)">
           <v-btn :to="`/app/entidades/${item.entidad_id}`" variant="text" size="small">Aprobar</v-btn>

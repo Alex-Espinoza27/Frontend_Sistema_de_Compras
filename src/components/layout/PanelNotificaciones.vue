@@ -19,6 +19,10 @@ const notificaciones = useNotificacionesStore()
 const auth = useAuthStore()
 const router = useRouter()
 
+defineProps<{
+  colorIcono?: string
+}>()
+
 async function rutaReferencia(item: NotificacionItem): Promise<string | null> {
   if (item.referencia_id == null) return null
   switch (item.referencia_tipo) {
@@ -51,7 +55,7 @@ async function clicNotificacion(item: NotificacionItem) {
 <template>
   <v-menu :close-on-content-click="false" @update:model-value="alAbrir">
     <template #activator="{ props: menuProps }">
-      <v-btn icon variant="text" v-bind="menuProps">
+      <v-btn icon variant="text" :color="colorIcono" v-bind="menuProps">
         <v-badge v-if="notificaciones.noLeidas > 0" :content="notificaciones.noLeidas" color="error">
           <v-icon icon="mdi-bell-outline" />
         </v-badge>

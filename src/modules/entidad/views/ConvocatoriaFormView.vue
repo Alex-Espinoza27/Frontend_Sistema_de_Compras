@@ -14,6 +14,7 @@ import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import BaseDateTimePicker from '@/components/base/BaseDateTimePicker.vue'
 import BaseVolver from '@/components/base/BaseVolver.vue'
+import { useDescarga } from '@/composables/useDescarga'
 import type { ConvocatoriaDetalle, RequerimientoCombo } from '@/modules/entidad/entidad.types'
 import dayjs from '@/plugins/dayjs'
 import { useUiStore } from '@/stores/ui.store'
@@ -32,6 +33,16 @@ const esEdicion = id !== null
 const cargando = ref(true)
 const detalle = ref<ConvocatoriaDetalle | null>(null)
 const esBorrador = computed(() => !esEdicion || detalle.value?.estado.codigo === 'BORRADOR')
+
+// 05C hardening (pedido explícitamente por el usuario): antes de esto, la
+// única forma de enterarse de que no hay plantilla DJ (propia ni por
+// defecto) era que `publicar()` fallara con 409 — después de llenar todo lo
+// demás. Ahora se avisa desde que se abre el formulario.
+const plantillaDjDefectoExiste = ref(true)
+convocatoriasApi.plantillaDjDefecto().then((data) => (plantillaDjDefectoExiste.value = data.existe))
+const faltaPlantillaDj = computed(
+  () => esBorrador.value && !detalle.value?.archivos.plantilla_dj && archivoPlantilla.value.length === 0 && !plantillaDjDefectoExiste.value,
+)
 
 // --- Solo modo creación: elegir requerimiento -------------------------------
 const requerimientosDisponibles = ref<RequerimientoCombo[]>([])
@@ -53,6 +64,18 @@ function alSeleccionarRequerimiento(reqId: unknown) {
   }
 }
 
+// --- Cambios sin guardar (05C hardening, pedido explícitamente por el
+// usuario): Publicar debe avisar primero si hay cambios en nombre/fechas/
+// plantilla que todavía no se guardaron, en vez de publicar información
+// desactualizada o fallar más adelante sin explicación clara.
+const snapshotGuardado = ref('')
+function tomarSnapshotFormulario(): string {
+  return JSON.stringify({ nombre_servicio: form.nombre_servicio, fecha_inicio: form.fecha_inicio, fecha_fin: form.fecha_fin })
+}
+const haySinGuardar = computed(
+  () => archivoPlantilla.value.length > 0 || tomarSnapshotFormulario() !== snapshotGuardado.value,
+)
+
 async function cargar() {
   cargando.value = true
   if (!esEdicion) {
@@ -65,6 +88,7 @@ async function cargar() {
     form.fecha_inicio = dayjs(detalle.value.fecha_inicio).tz().format('YYYY-MM-DDTHH:mm')
     form.fecha_fin = dayjs(detalle.value.fecha_fin).tz().format('YYYY-MM-DDTHH:mm')
   }
+  snapshotGuardado.value = tomarSnapshotFormulario()
   cargando.value = false
 }
 cargar()
@@ -158,6 +182,12 @@ async function guardar() {
 }
 
 // --- Plantilla DJ ------------------------------------------------------------
+const { descargar: descargarPlantilla, cargando: descargandoPlantilla } = useDescarga()
+function alDescargarPlantilla() {
+  if (!detalle.value?.archivos.plantilla_dj) return
+  descargarPlantilla(`/archivos/${detalle.value.archivos.plantilla_dj.archivo_id}/descargar`, detalle.value.archivos.plantilla_dj.nombre)
+}
+
 async function eliminarPlantilla() {
   if (!id || !detalle.value?.archivos.plantilla_dj) return
   await convocatoriasApi.eliminarPlantillaDj(id, detalle.value.archivos.plantilla_dj.archivo_id)
@@ -169,6 +199,24 @@ async function eliminarPlantilla() {
 const publicarAbierto = ref(false)
 const publicando = ref(false)
 const errorPublicar = ref('')
+const avisoGuardarAbierto = ref(false)
+
+function alHacerClicPublicar() {
+  if (haySinGuardar.value) {
+    avisoGuardarAbierto.value = true
+    return
+  }
+  publicarAbierto.value = true
+}
+
+async function guardarYPublicar() {
+  await guardar()
+  avisoGuardarAbierto.value = false
+  if (!errorGeneral.value && !Object.keys(erroresCampo.value).length) {
+    publicarAbierto.value = true
+  }
+}
+
 async function confirmarPublicar() {
   if (!id) return
   publicando.value = true
@@ -205,6 +253,51 @@ async function confirmarCancelar(motivo: string | undefined) {
 const puedeCancelar = computed(() =>
   esEdicion && detalle.value ? ['BORRADOR', 'PUBLICADA', 'EN_EVALUACION'].includes(detalle.value.estado.codigo) : false,
 )
+
+// --- Ampliar fecha fin (05C hardening, pedido explícitamente por el
+// usuario): solo mientras sigue PUBLICADA — el backend bloquea con 409 en
+// cualquier otro estado (ver ConvocatoriaService::ampliarFechaFin()). El
+// valor anterior (`fecha_fin_anterior`) es solo para control interno de la
+// entidad, nunca se muestra en el portal público.
+const puedeAmpliar = computed(() => esEdicion && detalle.value?.estado.codigo === 'PUBLICADA')
+const ampliarAbierto = ref(false)
+const ampliando = ref(false)
+const errorAmpliar = ref('')
+const nuevaFechaFin = ref('')
+
+function abrirAmpliar() {
+  nuevaFechaFin.value = form.fecha_fin
+  errorAmpliar.value = ''
+  ampliarAbierto.value = true
+}
+
+const reglasNuevaFechaFin = computed(() => [
+  requerido(),
+  () => {
+    if (!nuevaFechaFin.value || !detalle.value) return true
+    return (
+      dayjs(nuevaFechaFin.value).isAfter(dayjs(detalle.value.fecha_fin).tz()) ||
+      'La nueva fecha debe ser posterior a la fecha de fin actual.'
+    )
+  },
+])
+
+async function confirmarAmpliar() {
+  if (!id) return
+  ampliando.value = true
+  errorAmpliar.value = ''
+  try {
+    await convocatoriasApi.ampliarFechaFin(id, nuevaFechaFin.value)
+    ampliarAbierto.value = false
+    ui.mostrarSnackbar('Plazo de postulación ampliado.', 'success')
+    await cargar()
+  } catch (e: unknown) {
+    const error = e as ErrorApi
+    errorAmpliar.value = error.response?.data?.mensaje ?? 'No se pudo ampliar el plazo.'
+  } finally {
+    ampliando.value = false
+  }
+}
 </script>
 
 <template>
@@ -264,6 +357,7 @@ const puedeCancelar = computed(() =>
               :disabled="!esBorrador"
               :rules="reglasFechaFin"
               :error-messages="erroresCampo.fecha_fin"
+              :min-fecha="form.fecha_inicio ? form.fecha_inicio.split('T')[0] : undefined"
               hint="El campo fecha de fin debe ser una fecha posterior a fecha de inicio."
               persistent-hint
             />
@@ -273,9 +367,21 @@ const puedeCancelar = computed(() =>
 
       <v-card v-if="esBorrador" v-can="esEdicion ? 'convocatorias.editar' : 'convocatorias.crear'" class="pa-4 mb-4">
         <div class="text-subtitle-1 text-titulo mb-3">Plantilla de declaración jurada</div>
+        <v-alert v-if="faltaPlantillaDj" type="warning" density="compact" variant="tonal" class="mb-4">
+          No hay plantilla propia ni plantilla por defecto configurada. No podrás publicar esta convocatoria hasta subir una aquí
+          (o que se configure una por defecto en Configuración).
+        </v-alert>
         <div v-if="detalle?.archivos.plantilla_dj" class="d-flex align-center ga-2 mb-4">
           <v-icon icon="mdi-file-document-outline" />
           <span>{{ detalle.archivos.plantilla_dj.nombre }}</span>
+          <v-btn
+            icon="mdi-download"
+            variant="text"
+            size="small"
+            color="primary"
+            :loading="descargandoPlantilla"
+            @click="alDescargarPlantilla"
+          />
           <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="eliminarPlantilla" />
         </div>
         <BaseArchivoUpload
@@ -312,30 +418,87 @@ const puedeCancelar = computed(() =>
           </tbody>
         </v-table>
         <div class="mt-3 text-body-2">
-          <span v-if="detalle.archivos.plantilla_dj">Plantilla DJ: {{ detalle.archivos.plantilla_dj.nombre }}</span>
+          <div v-if="detalle.archivos.plantilla_dj" class="d-flex align-center ga-2">
+            <span>Plantilla DJ: {{ detalle.archivos.plantilla_dj.nombre }}</span>
+            <v-btn
+              icon="mdi-download"
+              variant="text"
+              size="small"
+              color="primary"
+              :loading="descargandoPlantilla"
+              @click="alDescargarPlantilla"
+            />
+          </div>
           <span v-if="detalle.motivo_cierre" class="d-block mt-1">Motivo de cierre: {{ detalle.motivo_cierre }}</span>
+          <div v-if="detalle.fecha_fin_anterior" class="d-flex align-center ga-1 mt-1 text-grey">
+            <v-icon icon="mdi-clock-plus-outline" size="16" />
+            <span>
+              Plazo ampliado — fecha de cierre anterior:
+              {{ dayjs(detalle.fecha_fin_anterior).tz().format('DD/MM/YYYY HH:mm') }}h
+              <span class="text-caption">(solo visible para la entidad)</span>
+            </span>
+          </div>
         </div>
       </v-card>
 
       <div class="d-flex justify-end ga-2">
-        <v-btn variant="text" to="/app/convocatorias">Volver</v-btn>
-        <v-btn v-if="puedeCancelar" v-can="'convocatorias.cancelar'" color="error" variant="tonal" @click="cancelarAbierto = true">
+        <v-btn variant="outlined" color="secondary" class="px-5" to="/app/convocatorias">Volver</v-btn>
+        <v-btn
+          v-if="puedeCancelar"
+          v-can="'convocatorias.cancelar'"
+          color="error"
+          variant="tonal"
+          class="px-5"
+          @click="cancelarAbierto = true"
+        >
           Cancelar convocatoria
+        </v-btn>
+        <v-btn
+          v-if="puedeAmpliar"
+          v-can="'convocatorias.ampliar'"
+          color="secondary"
+          variant="tonal"
+          class="px-5"
+          prepend-icon="mdi-clock-plus-outline"
+          @click="abrirAmpliar"
+        >
+          Ampliar fecha fin
         </v-btn>
         <v-btn
           v-if="esBorrador"
           v-can="esEdicion ? 'convocatorias.editar' : 'convocatorias.crear'"
           type="submit"
+          color="primary"
+          variant="flat"
+          elevation="2"
+          class="px-6"
           :loading="guardando"
           :disabled="!formValido"
         >
           Guardar
         </v-btn>
-        <v-btn v-if="esEdicion && esBorrador" v-can="'convocatorias.publicar'" color="primary" @click="publicarAbierto = true">
+        <v-btn
+          v-if="esEdicion && esBorrador"
+          v-can="'convocatorias.publicar'"
+          color="primary"
+          variant="flat"
+          elevation="2"
+          class="px-6"
+          @click="alHacerClicPublicar"
+        >
           Publicar
         </v-btn>
       </div>
     </v-form>
+
+    <BaseConfirmacion
+      v-model:abierto="avisoGuardarAbierto"
+      titulo="Guarda los cambios primero"
+      mensaje="Tienes cambios en nombre, fechas o plantilla que todavía no se guardaron. Guárdalos antes de publicar, así la convocatoria se publica con la información correcta."
+      texto-confirmar="Guardar y continuar"
+      :cargando="guardando"
+      @confirmar="guardarYPublicar"
+    />
 
     <BaseConfirmacion
       v-model:abierto="publicarAbierto"
@@ -356,5 +519,35 @@ const puedeCancelar = computed(() =>
       :cargando="cancelando"
       @confirmar="confirmarCancelar"
     />
+
+    <v-dialog v-model="ampliarAbierto" max-width="480" persistent>
+      <v-card class="rounded-lg">
+        <v-card-title class="d-flex align-center justify-space-between pa-4 bg-surface text-titulo font-weight-bold">
+          <span>Ampliar fecha fin</span>
+          <v-btn icon="mdi-close" variant="text" density="compact" @click="ampliarAbierto = false" />
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-4">
+          <p class="text-body-2 mb-4">
+            Define la nueva fecha y hora de cierre. Los proveedores verán el plazo actualizado de inmediato; la fecha de
+            cierre anterior queda guardada solo para control interno, no se muestra en el portal público.
+          </p>
+          <v-alert v-if="errorAmpliar" type="error" density="compact" class="mb-4">{{ errorAmpliar }}</v-alert>
+          <BaseDateTimePicker
+            v-model="nuevaFechaFin"
+            label="Nueva fecha y hora de fin *"
+            :rules="reglasNuevaFechaFin"
+            :min-fecha="detalle ? dayjs(detalle.fecha_fin).tz().format('YYYY-MM-DD') : undefined"
+          />
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="pa-4 bg-surface d-flex justify-end ga-2">
+          <v-btn variant="outlined" color="secondary" class="px-5" @click="ampliarAbierto = false">Cancelar</v-btn>
+          <v-btn color="primary" variant="flat" elevation="2" class="px-6" :loading="ampliando" @click="confirmarAmpliar">
+            Ampliar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>

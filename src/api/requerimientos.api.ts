@@ -45,7 +45,8 @@ export const requerimientosApi = {
     return cliente.post<never, null>(`/requerimientos/${id}`, fd)
   },
 
-  destroy: (id: number) => cliente.delete<never, null>(`/requerimientos/${id}`),
+  desactivar: (id: number) => cliente.post<never, null>(`/requerimientos/${id}/desactivar`),
+  activar: (id: number) => cliente.post<never, null>(`/requerimientos/${id}/activar`),
 
   eliminarTdr: (id: number, archivoId: number) =>
     cliente.delete<never, null>(`/requerimientos/${id}/tdr/${archivoId}`),

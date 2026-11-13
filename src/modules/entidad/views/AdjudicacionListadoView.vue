@@ -18,14 +18,15 @@ import { hoyTexto } from '@/utils/fechas'
 const { items, paginacion, cargando, params, recargar } = useListado<ConvocatoriaListaItem>(
   convocatoriasApi.index,
   { lista_para_adjudicar: 'true', ordenar_por: 'fecha_fin', direccion: 'asc', desde: hoyTexto(), hasta: hoyTexto() },
+  'filtros_adjudicacion',
 )
 
 const cabeceras = [
+  { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Número', key: 'numero' },
   { title: 'Nombre', key: 'nombre_servicio', sortable: false },
   { title: 'Cierre de plazo', key: 'fecha_fin' },
   { title: 'N.º ofertas', key: 'total_ofertas', sortable: false },
-  { title: '', key: 'acciones', sortable: false },
 ]
 </script>
 
@@ -33,7 +34,7 @@ const cabeceras = [
   <v-container class="py-8">
     <div class="d-flex justify-space-between align-center mb-6">
       <div class="text-h5 text-titulo">Adjudicación</div>
-      <v-btn icon color="primary" variant="text" :loading="cargando" @click="recargar()">
+      <v-btn icon color="primary" variant="outlined" :loading="cargando" @click="recargar()">
         <v-icon icon="mdi-refresh" />
         <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
       </v-btn>
@@ -67,12 +68,21 @@ const cabeceras = [
       :loading="cargando"
       mensaje-vacio="No hay convocatorias listas para adjudicar."
     >
-      <template #item.fecha_fin="{ item }">{{ dayjs(item.fecha_fin).tz().format('DD/MM/YYYY HH:mm') }}</template>
       <template #item.acciones="{ item }">
-        <v-btn :to="`/app/convocatorias/${item.convocatoria_id}/adjudicacion`" variant="text" size="small">
-          Ir a Adjudicación
-        </v-btn>
+        <div class="d-flex align-center ga-1">
+          <v-btn
+            :to="`/app/convocatorias/${item.convocatoria_id}/adjudicacion`"
+            icon
+            variant="text"
+            size="small"
+            color="primary"
+          >
+            <v-icon icon="mdi-gavel" />
+            <v-tooltip activator="parent" location="top">Ir a Adjudicación</v-tooltip>
+          </v-btn>
+        </div>
       </template>
+      <template #item.fecha_fin="{ item }">{{ dayjs(item.fecha_fin).tz().format('DD/MM/YYYY HH:mm') }}</template>
     </BaseTablaServidor>
   </v-container>
 </template>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// Catálogo de rubros (Sin paginación, el backend devuelve todo).
 import { reactive, ref } from 'vue'
 
 import { adminApi } from '@/api/admin.api'
+import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import type { RubroAdmin, TipoRubro } from '@/modules/muni/muni.types'
 import { useUiStore } from '@/stores/ui.store'
 import { requerido } from '@/utils/validaciones'
@@ -22,11 +22,11 @@ async function cargar() {
 cargar()
 
 const cabeceras = [
+  { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Tipo', key: 'tipo' },
   { title: 'Código', key: 'codigo' },
   { title: 'Nombre', key: 'nombre' },
   { title: 'Estado', key: 'activo' },
-  { title: '', key: 'acciones', sortable: false },
 ]
 
 const abierto = ref(false)
@@ -35,6 +35,10 @@ const editando = ref<RubroAdmin | null>(null)
 const form = reactive({ tipo: 'SERVICIO' as TipoRubro, codigo: '', nombre: '' })
 const guardando = ref(false)
 const erroresCampo = ref<Record<string, string[]>>({})
+
+const confirmacionAbierta = ref(false)
+const itemADesactivar = ref<RubroAdmin | null>(null)
+const procesandoEstado = ref(false)
 
 function abrirNuevo() {
   editando.value = null
@@ -52,6 +56,7 @@ function abrirEditar(item: RubroAdmin) {
   erroresCampo.value = {}
   abierto.value = true
 }
+
 async function guardar() {
   if (!formValido.value) return
   guardando.value = true
@@ -61,7 +66,7 @@ async function guardar() {
       await adminApi.actualizarRubro(editando.value.rubro_id, { ...form, activo: editando.value.activo })
       ui.mostrarSnackbar('Rubro actualizado.', 'success')
     } else {
-      await adminApi.crearRubro({ ...form, activo: true })
+      await adminApi.crearRubro({ tipo: form.tipo, nombre: form.nombre, activo: true })
       ui.mostrarSnackbar('Rubro creado.', 'success')
     }
     abierto.value = false
@@ -74,10 +79,33 @@ async function guardar() {
   }
 }
 
-async function alternarActivo(item: RubroAdmin) {
+function solicitarAlternarActivo(item: RubroAdmin) {
+  if (item.activo) {
+    itemADesactivar.value = item
+    confirmacionAbierta.value = true
+  } else {
+    ejecutarCambioEstado(item, true)
+  }
+}
+
+async function confirmarDesactivacion() {
+  if (!itemADesactivar.value) return
+  procesandoEstado.value = true
+  await ejecutarCambioEstado(itemADesactivar.value, false)
+  procesandoEstado.value = false
+  confirmacionAbierta.value = false
+  itemADesactivar.value = null
+}
+
+async function ejecutarCambioEstado(item: RubroAdmin, nuevoActivo: boolean) {
   try {
-    await adminApi.actualizarRubro(item.rubro_id, { tipo: item.tipo, codigo: item.codigo, nombre: item.nombre, activo: !item.activo })
-    ui.mostrarSnackbar(item.activo ? 'Rubro desactivado.' : 'Rubro activado.', 'success')
+    await adminApi.actualizarRubro(item.rubro_id, {
+      tipo: item.tipo,
+      codigo: item.codigo,
+      nombre: item.nombre,
+      activo: nuevoActivo,
+    })
+    ui.mostrarSnackbar(nuevoActivo ? 'Rubro activado.' : 'Rubro desactivado.', 'success')
     await cargar()
   } catch {
     // El snackbar global ya informa el error.
@@ -88,7 +116,9 @@ async function alternarActivo(item: RubroAdmin) {
 <template>
   <div>
     <div class="d-flex justify-end mb-4">
-      <v-btn prepend-icon="mdi-plus" @click="abrirNuevo">Nuevo rubro</v-btn>
+      <v-btn color="primary" variant="flat" elevation="2" class="font-weight-medium px-5" @click="abrirNuevo">
+        Nuevo rubro
+      </v-btn>
     </div>
 
     <v-progress-circular v-if="cargando" indeterminate color="primary" />
@@ -100,6 +130,20 @@ async function alternarActivo(item: RubroAdmin) {
       </thead>
       <tbody>
         <tr v-for="item in items" :key="item.rubro_id">
+          <td>
+            <div class="d-flex align-center ga-1">
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                color="primary"
+                @click="abrirEditar(item)"
+              >
+                <v-icon icon="mdi-pencil-outline" />
+                <v-tooltip activator="parent" location="top">Editar rubro</v-tooltip>
+              </v-btn>
+            </div>
+          </td>
           <td>{{ item.tipo === 'BIEN' ? 'Bien' : 'Servicio' }}</td>
           <td>{{ item.codigo }}</td>
           <td>{{ item.nombre }}</td>
@@ -109,20 +153,21 @@ async function alternarActivo(item: RubroAdmin) {
               color="primary"
               density="compact"
               hide-details
-              @update:model-value="alternarActivo(item)"
+              @update:model-value="solicitarAlternarActivo(item)"
             />
-          </td>
-          <td>
-            <v-btn variant="text" size="small" @click="abrirEditar(item)">Editar</v-btn>
           </td>
         </tr>
       </tbody>
     </v-table>
 
     <v-dialog v-model="abierto" max-width="420">
-      <v-card>
-        <v-card-title class="text-titulo">{{ editando ? 'Editar rubro' : 'Nuevo rubro' }}</v-card-title>
-        <v-card-text>
+      <v-card class="rounded-lg">
+        <v-card-title class="d-flex align-center justify-space-between pa-4 bg-surface text-titulo font-weight-bold">
+          <span>{{ editando ? 'Editar rubro' : 'Nuevo rubro' }}</span>
+          <v-btn icon="mdi-close" variant="text" density="compact" @click="abierto = false" />
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-4">
           <v-form v-model="formValido">
             <v-select
               v-model="form.tipo"
@@ -131,15 +176,15 @@ async function alternarActivo(item: RubroAdmin) {
                 { title: 'Servicio', value: 'SERVICIO' },
               ]"
               label="Tipo"
-              class="mb-2"
+              :disabled="!!editando"
+              class="mb-3"
             />
             <v-text-field
+              v-if="editando"
               v-model="form.codigo"
               label="Código"
-              :maxlength="20"
-              :rules="[requerido()]"
-              :error-messages="erroresCampo.codigo"
-              class="mb-2"
+              readonly
+              class="mb-3"
             />
             <v-text-field
               v-model="form.nombre"
@@ -150,12 +195,22 @@ async function alternarActivo(item: RubroAdmin) {
             />
           </v-form>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="abierto = false">Cancelar</v-btn>
-          <v-btn color="primary" :loading="guardando" :disabled="!formValido" @click="guardar">Guardar</v-btn>
+        <v-divider />
+        <v-card-actions class="pa-4 bg-surface d-flex justify-end ga-2">
+          <v-btn variant="outlined" color="secondary" class="px-5" @click="abierto = false">Cancelar</v-btn>
+          <v-btn color="primary" variant="flat" elevation="2" class="px-6" :loading="guardando" :disabled="!formValido" @click="guardar">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <BaseConfirmacion
+      v-model:abierto="confirmacionAbierta"
+      titulo="Desactivar rubro"
+      :mensaje="`¿Está seguro de que desea desactivar el rubro '${itemADesactivar?.nombre}'? Dejará de estar disponible para nuevos registros.`"
+      texto-confirmar="Desactivar"
+      color="error"
+      :cargando="procesandoEstado"
+      @confirmar="confirmarDesactivacion"
+    />
   </div>
 </template>
