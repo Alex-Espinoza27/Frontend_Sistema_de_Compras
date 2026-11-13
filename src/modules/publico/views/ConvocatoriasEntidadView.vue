@@ -4,7 +4,6 @@ import { useRoute } from 'vue-router'
 
 import { datosAbiertosApi } from '@/api/datosAbiertos.api'
 import { publicoApi } from '@/api/publico.api'
-import { useDescarga } from '@/composables/useDescarga'
 import { useListado } from '@/composables/useListado'
 import CardConvocatoria from '@/modules/publico/components/CardConvocatoria.vue'
 import ModalMotivoCierre from '@/modules/publico/components/ModalMotivoCierre.vue'
@@ -29,8 +28,6 @@ publicoApi.entidades().then((respuesta) => {
 // estado y descargas que `/datos-abiertos`, acotados a esta entidad.
 const estadisticas = ref<EstadisticasPublicas | null>(null)
 datosAbiertosApi.estadisticas(entidadId.value).then((data) => (estadisticas.value = data))
-const { cargando: descargando, bloqueado, descargar } = useDescarga()
-const descargasAbierto = ref(false)
 
 const pestana = ref<EstadoGrupo>('VIGENTES')
 
@@ -151,26 +148,26 @@ const listaTarjetas = computed(() => {
       subEstado: 'DESIERTA',
       activo: pestana.value === 'CONCLUIDAS' && subEstadoFiltro.value === 'DESIERTA',
     },
-    {
-      id: 'canceladas',
-      label: 'Canceladas',
-      total: getCount(['CANCELADA']),
-      color: 'error',
-      icon: 'mdi-close-circle-outline',
-      tab: 'CONCLUIDAS' as EstadoGrupo,
-      subEstado: 'CANCELADA',
-      activo: pestana.value === 'CONCLUIDAS' && subEstadoFiltro.value === 'CANCELADA',
-    },
-    {
-      id: 'proveedores',
-      label: 'Proveedores',
-      total: estadisticas.value?.proveedores_participantes ?? 0,
-      color: 'secondary',
-      icon: 'mdi-account-group-outline',
-      tab: null,
-      subEstado: null,
-      activo: false,
-    },
+    // {
+    //   id: 'canceladas',
+    //   label: 'Canceladas',
+    //   total: getCount(['CANCELADA']),
+    //   color: 'error',
+    //   icon: 'mdi-close-circle-outline',
+    //   tab: 'CONCLUIDAS' as EstadoGrupo,
+    //   subEstado: 'CANCELADA',
+    //   activo: pestana.value === 'CONCLUIDAS' && subEstadoFiltro.value === 'CANCELADA',
+    // },
+    // {
+    //   id: 'proveedores',
+    //   label: 'Proveedores',
+    //   total: estadisticas.value?.proveedores_participantes ?? 0,
+    //   color: 'secondary',
+    //   icon: 'mdi-account-group-outline',
+    //   tab: null,
+    //   subEstado: null,
+    //   activo: false,
+    // },
   ]
 })
 
@@ -226,9 +223,9 @@ const opcionesOrden = [
   },
 ]
 
-const subtituloOrdenActual = computed(
-  () => opcionesOrden.find((o) => o.value === ordenSeleccionado.value)?.subtitulo ?? '',
-)
+// const subtituloOrdenActual = computed(
+//   () => opcionesOrden.find((o) => o.value === ordenSeleccionado.value)?.subtitulo ?? '',
+// )
 
 function alCambiarOrden(valor: string) {
   ordenSeleccionado.value = valor
@@ -308,7 +305,7 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
           :key="card.id"
           cols="6"
           sm="4"
-          md="2"
+          md="3"
         >
           <v-card
             class="pa-3 metrica-card rounded-lg h-100 d-flex flex-column justify-space-between"
@@ -357,123 +354,6 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
           </v-card>
         </v-col>
       </v-row>
-
-      <!-- 3. Centro de Descargas y Datos Abiertos (Colapsable) -->
-      <v-card class="mb-8 rounded-lg descargas-container border" elevation="0">
-        <div
-          class="pa-4 d-flex flex-column flex-sm-row justify-space-between align-start align-sm-center ga-3 cursor-pointer"
-          @click="descargasAbierto = !descargasAbierto"
-        >
-          <div class="d-flex align-center ga-3">
-            <v-avatar color="primary" variant="tonal" size="40" rounded="lg">
-              <v-icon icon="mdi-tray-arrow-down" size="22" />
-            </v-avatar>
-            <div>
-              <div class="text-subtitle-1 text-titulo font-weight-bold">
-                Descarga de Datos Abiertos y Transparencia
-              </div>
-              <div class="text-caption text-grey">
-                Formatos estándar (.xlsx y .csv) de convocatorias y adjudicaciones públicas.
-              </div>
-            </div>
-          </div>
-
-          <v-btn
-            variant="tonal"
-            size="small"
-            color="primary"
-            class="text-none font-weight-medium flex-shrink-0"
-            :append-icon="descargasAbierto ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            @click.stop="descargasAbierto = !descargasAbierto"
-          >
-            {{ descargasAbierto ? 'Ocultar descargas' : 'Ver descargas' }}
-          </v-btn>
-        </div>
-
-        <v-expand-transition>
-          <div v-show="descargasAbierto" class="px-5 pb-5 pt-1 border-t">
-            <v-row density="comfortable" class="mt-1">
-              <!-- Bloque Convocatorias -->
-              <v-col cols="12" md="6">
-                <div class="descarga-grupo-card pa-4 rounded-lg h-100 border">
-                  <div class="d-flex align-center ga-2 mb-2">
-                    <v-icon icon="mdi-file-document-multiple-outline" color="primary" size="20" />
-                    <span class="text-subtitle-2 font-weight-bold">Procesos de Convocatoria</span>
-                  </div>
-                  <p class="text-caption text-grey mb-3">
-                    Listado de bases, requerimientos, fechas límites de postulación y estado actual de cada proceso.
-                  </p>
-                  <div class="d-flex flex-wrap ga-2">
-                    <v-btn
-                      variant="tonal"
-                      color="success"
-                      size="small"
-                      prepend-icon="mdi-file-excel-box"
-                      :loading="descargando"
-                      :disabled="bloqueado"
-                      class="font-weight-medium"
-                      @click="descargar(datosAbiertosApi.convocatoriasXlsxUrl(entidadId), 'convocatorias.xlsx')"
-                    >
-                      Excel (.xlsx)
-                    </v-btn>
-                    <v-btn
-                      variant="tonal"
-                      color="primary"
-                      size="small"
-                      prepend-icon="mdi-file-delimited"
-                      :loading="descargando"
-                      :disabled="bloqueado"
-                      class="font-weight-medium"
-                      @click="descargar(datosAbiertosApi.convocatoriasCsvUrl(entidadId), 'convocatorias.csv')"
-                    >
-                      CSV (.csv)
-                    </v-btn>
-                  </div>
-                </div>
-              </v-col>
-
-              <!-- Bloque Adjudicaciones -->
-              <v-col cols="12" md="6">
-                <div class="descarga-grupo-card pa-4 rounded-lg h-100 border">
-                  <div class="d-flex align-center ga-2 mb-2">
-                    <v-icon icon="mdi-trophy-outline" color="warning" size="20" />
-                    <span class="text-subtitle-2 font-weight-bold">Adjudicaciones y Resultados</span>
-                  </div>
-                  <p class="text-caption text-grey mb-3">
-                    Resultados definitivos, proveedores ganadores, actas y montos contratados por la entidad.
-                  </p>
-                  <div class="d-flex flex-wrap ga-2">
-                    <v-btn
-                      variant="tonal"
-                      color="success"
-                      size="small"
-                      prepend-icon="mdi-file-excel-box"
-                      :loading="descargando"
-                      :disabled="bloqueado"
-                      class="font-weight-medium"
-                      @click="descargar(datosAbiertosApi.adjudicacionesXlsxUrl(entidadId), 'adjudicaciones.xlsx')"
-                    >
-                      Excel (.xlsx)
-                    </v-btn>
-                    <v-btn
-                      variant="tonal"
-                      color="primary"
-                      size="small"
-                      prepend-icon="mdi-file-delimited"
-                      :loading="descargando"
-                      :disabled="bloqueado"
-                      class="font-weight-medium"
-                      @click="descargar(datosAbiertosApi.adjudicacionesCsvUrl(entidadId), 'adjudicaciones.csv')"
-                    >
-                      CSV (.csv)
-                    </v-btn>
-                  </div>
-                </div>
-              </v-col>
-            </v-row>
-          </div>
-        </v-expand-transition>
-      </v-card>
     </template>
 
     <!-- 4. Pestañas de Estado con Contadores (Centradas y Grandes) -->
@@ -634,7 +514,7 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
               <v-list-item v-bind="itemProps" :title="item.raw.title" :subtitle="item.raw.subtitulo" lines="two" />
             </template>
           </v-select>
-          <div class="text-caption text-grey mt-1">{{ subtituloOrdenActual }}</div>
+          <!-- <div class="text-caption text-grey mt-1">{{ subtituloOrdenActual }}</div> -->
         </v-col>
       </v-row>
 
@@ -699,10 +579,14 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
         show-first-last-page
         :total-visible="5"
         rounded="lg"
-        color="primary"
-        active-color="primary"
         class="paginacion-custom"
-      />
+      >
+        <template #item="{ isActive, page, props: itemProps }">
+          <v-btn v-bind="itemProps" :variant="isActive ? 'flat' : 'text'" :color="isActive ? 'primary' : undefined">
+            {{ page }}
+          </v-btn>
+        </template>
+      </v-pagination>
     </div>
 
     <!-- Modal de motivo de cierre -->
@@ -788,9 +672,14 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
   letter-spacing: 0.2px;
 }
 
-.paginacion-custom :deep(.v-pagination__item--is-active .v-btn) {
-  background-color: rgb(var(--v-theme-primary)) !important;
-  color: rgb(var(--v-theme-on-primary)) !important;
-  font-weight: 700 !important;
-}
+/* El número activo (fondo primary + texto on-primary) se renderiza en el
+   slot `#item` del v-pagination, con `v-btn` explícito (05C hardening,
+   pedido explícitamente por el usuario): pasar `variant`/`active-color`
+   como props del propio v-pagination no alcanzaba — ese valor solo llega al
+   v-btn interno como un *default* (`provideDefaults`), y en el cascade real
+   seguía perdiendo contra la regla de Vuetify `.v-btn--variant-text {
+   background: transparent }` (el variant real con el que se montaba cada
+   botón), dejando el número activo en blanco-sobre-blanco en ambos temas.
+   Renderizando el v-btn nosotros mismos con `:variant`/`:color` explícitos
+   no hay ambigüedad posible de cascada. */
 </style>

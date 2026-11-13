@@ -9,7 +9,7 @@ import { useColorMarca } from '@/composables/useColorMarca'
 import { useDescarga } from '@/composables/useDescarga'
 import type { ConfiguracionItem, UitItem } from '@/modules/muni/muni.types'
 import { useUiStore } from '@/stores/ui.store'
-import { colorHex } from '@/utils/validaciones'
+import { colorHex, rucValido } from '@/utils/validaciones'
 
 const ui = useUiStore()
 const { aplicar: aplicarColorMarca } = useColorMarca()
@@ -128,6 +128,7 @@ function alDescargarPlantillaDefecto() {
 const clavesConocidas = new Set([
   'INSTITUCION_NOMBRE',
   'COLOR_PRIMARIO',
+  'ENTIDAD_PRINCIPAL_RUC',
   'CORREO_REMITENTE_NOMBRE',
   'CORREO_REMITENTE',
   'PLANTILLA_DJ_DEFECTO',
@@ -341,6 +342,18 @@ async function guardarUit() {
                     @update:model-value="alCambiarColorMarca"
                   />
                 </div>
+              </v-col>
+
+              <v-col v-if="findConfig('ENTIDAD_PRINCIPAL_RUC')" cols="12" sm="6">
+                <v-text-field
+                  v-model="findConfig('ENTIDAD_PRINCIPAL_RUC')!.valor"
+                  label="RUC de la Entidad Principal"
+                  prepend-inner-icon="mdi-domain"
+                  :rules="[rucValido()]"
+                  hint="Esa entidad se muestra directo en el portal público (/), aunque haya más de una aprobada. Vacío = mostrar el buscador cuando haya más de una."
+                  persistent-hint
+                  class="mb-3"
+                />
               </v-col>
 
               <v-col v-if="findConfig('CORREO_REMITENTE_NOMBRE')" cols="12" sm="6">

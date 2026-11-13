@@ -22,6 +22,11 @@ export function colorHex(mensaje = 'Debe ser un color hexadecimal, ej. #0090D8.'
   return (valor) => !valor || patron.test(String(valor)) || mensaje
 }
 
+export function rucValido(mensaje = 'Debe ser un RUC de 11 dígitos.'): Regla {
+  const patron = /^\d{11}$/
+  return (valor) => !valor || patron.test(String(valor)) || mensaje
+}
+
 export function min(limite: number, mensaje?: string): Regla {
   return (valor) =>
     valor === null || valor === undefined || valor === ''

@@ -96,6 +96,5 @@ export interface SolicitudEntidadInput {
 /** `GET /datos-abiertos/estadisticas` (03 §3, `DatosAbiertosController::estadisticas`). */
 export interface EstadisticasPublicas {
   convocatorias_por_estado: { codigo: string; nombre: string; total: number }[]
-  adjudicadas_por_mes: { mes: string; total: number; monto_adjudicado: number }[]
   proveedores_participantes: number
 }

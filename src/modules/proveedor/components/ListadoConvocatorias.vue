@@ -409,10 +409,14 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
         show-first-last-page
         :total-visible="5"
         rounded="lg"
-        color="primary"
-        active-color="primary"
         class="paginacion-custom"
-      />
+      >
+        <template #item="{ isActive, page, props: itemProps }">
+          <v-btn v-bind="itemProps" :variant="isActive ? 'flat' : 'text'" :color="isActive ? 'primary' : undefined">
+            {{ page }}
+          </v-btn>
+        </template>
+      </v-pagination>
     </div>
 
     <ModalMotivoCierre v-model:abierto="motivoAbierto" :convocatoria-id="motivoConvocatoriaId" />
@@ -451,9 +455,7 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
   letter-spacing: 0.2px;
 }
 
-.paginacion-custom :deep(.v-pagination__item--is-active .v-btn) {
-  background-color: rgb(var(--v-theme-primary)) !important;
-  color: rgb(var(--v-theme-on-primary)) !important;
-  font-weight: 700 !important;
-}
+/* El número activo se renderiza con v-btn explícito en el slot `#item` del
+   v-pagination — ver el comentario en ConvocatoriasEntidadView.vue (mismo
+   diseño, mismo fix). */
 </style>

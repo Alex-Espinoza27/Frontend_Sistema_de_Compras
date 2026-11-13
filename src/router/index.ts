@@ -16,7 +16,7 @@ function rutaAuth<T>(path: string, name: string, componente: () => Promise<T>): 
 
 // Tres zonas con layout propio (05A §6).
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
