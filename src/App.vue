@@ -13,7 +13,7 @@ const theme = useTheme()
 watch(
   () => ui.tema,
   (tema) => {
-    theme.change(tema)
+    theme.global.name.value = tema
   },
   { immediate: true },
 )
