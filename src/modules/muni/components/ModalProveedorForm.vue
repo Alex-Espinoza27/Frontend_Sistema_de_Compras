@@ -47,6 +47,18 @@ const form = reactive<ProveedorAdminInput>({
 })
 
 const cargando = ref(false)
+// `erroresCampo` se declara antes del watch (y no después, como estaba):
+// el watch es `immediate: true` y la referencia a una const declarada más
+// abajo en el código fuente — aunque en `npm run dev` nunca falla porque Vue
+// agenda el callback para después de que termine todo el setup(), el build
+// de produccion (bundlers/orden de inicializacion de modulos) sí lo ejecutaba
+// antes de que `erroresCampo` existiera, con `ReferenceError: Cannot access
+// 'X' before initialization` — y esa excepcion sin capturar dejaba la cola
+// de reactividad de Vue en mal estado para el resto de la sesion, rompiendo
+// el posicionamiento de CUALQUIER v-select/v-menu en cualquier otro módulo
+// hasta recargar la página (el bug reportado: "en todos los modales, el
+// select aparece muy abajo, fuera del modal").
+const erroresCampo = ref<Record<string, string[]>>({})
 watch(
   () => props.proveedorId,
   async (id) => {
@@ -84,7 +96,6 @@ watch(
 
 const formValido = ref(false)
 const guardando = ref(false)
-const erroresCampo = ref<Record<string, string[]>>({})
 
 async function guardar() {
   guardando.value = true
