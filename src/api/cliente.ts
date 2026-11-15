@@ -1,6 +1,7 @@
 import axios, { type AxiosError } from 'axios'
 
 import router from '@/router'
+import { obtenerToken } from '@/api/token'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 import type { Envelope } from '@/types/api'
@@ -8,25 +9,29 @@ import type { Envelope } from '@/types/api'
 /**
  * Instancia única de axios para toda la app (05A §3). Ningún componente
  * llama a axios directo: pasa siempre por un `<modulo>.api.ts`.
+ *
+ * Auth por Bearer token (Sanctum personal access tokens), no cookies de
+ * sesión: evita depender de SESSION_DOMAIN/SESSION_PATH/CSRF-cookie cuando
+ * backend y frontend corren en orígenes/puertos distintos.
+ *
+ * baseURL construida desde `import.meta.env.BASE_URL` (no `VITE_API_URL`
+ * horneada en el build): el frontend se compila dentro de `public/` del
+ * propio backend, que puede servirse bajo una subcarpeta (p.ej.
+ * `/compras/public/`), así que una baseURL con `/` fijo al inicio se
+ * resolvería contra la raíz del dominio y no contra esa subcarpeta.
+ * `BASE_URL` ya refleja el `base` de Vite (`VITE_BASE_PATH`), que es el mismo
+ * prefijo con el que se sirvió `index.html`.
  */
 const cliente = axios.create({
-  // Todo /api/v1 (03 §0: "Base URL: /api/v1"). El único endpoint fuera de ese
-  // prefijo es /sanctum/csrf-cookie (asegurarCsrf, más abajo).
-  baseURL: `${import.meta.env.VITE_API_URL}/api/v1`,
-  withCredentials: true,
-  withXSRFToken: true,
+  baseURL: `${import.meta.env.BASE_URL}api/v1`,
   headers: { Accept: 'application/json' },
 })
 
-/** Llama `GET /sanctum/csrf-cookie` antes del primer POST de un flujo de auth
- * (login, registro...). Se llama siempre (no se cachea "para siempre"): el
- * backend regenera la sesión en cada login, así que una cookie vieja de un
- * login anterior en la misma pestaña ya no sirve para el siguiente. */
-export async function asegurarCsrf(): Promise<void> {
-  await axios.get(`${import.meta.env.VITE_API_URL}/sanctum/csrf-cookie`, {
-    withCredentials: true,
-  })
-}
+cliente.interceptors.request.use((config) => {
+  const token = obtenerToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
 
 cliente.interceptors.response.use(
   // Éxito: desempaqueta el envelope { ok, data, mensaje } y expone solo `data`.
@@ -54,11 +59,9 @@ cliente.interceptors.response.use(
     const mensaje = error.response?.data?.mensaje
 
     switch (status) {
-      case 401:
-      case 419: {
-        // 419 = CSRF/sesión vencida (Laravel/Sanctum, no está en la tabla de
-        // 03/05A porque es de framework, no de negocio) — se trata como 401:
-        // limpia la sesión local y, si aplica, manda a /login.
+      case 401: {
+        // Token Bearer ausente/inválido/revocado: limpia la sesión local y,
+        // si aplica, manda a /login.
         const auth = useAuthStore()
         const estabaAutenticado = auth.autenticado
         auth.limpiarSesion()

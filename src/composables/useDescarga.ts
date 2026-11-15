@@ -6,9 +6,9 @@ const BLOQUEO_429_MS = 5000
 
 /** Algunos endpoints (ArchivoController, OfertaService) devuelven
  * `descarga_url`/`constancia_url` como ruta absoluta ya con el prefijo
- * `/api/v1` incluido. `cliente` ya antepone `${VITE_API_URL}/api/v1` a toda
- * URL relativa, así que hay que quitar ese prefijo antes de pasarla — si no,
- * termina pidiendo `/api/v1/api/v1/...` (404). */
+ * `/api/v1` incluido. `cliente` ya antepone `/api/v1` a toda URL relativa,
+ * así que hay que quitar ese prefijo antes de pasarla — si no, termina
+ * pidiendo `/api/v1/api/v1/...` (404). */
 function quitarPrefijoApi(url: string): string {
   return url.startsWith('/api/v1/') ? url.slice('/api/v1'.length) : url
 }

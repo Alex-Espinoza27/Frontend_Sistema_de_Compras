@@ -32,12 +32,18 @@ export interface PerfilInterno {
 
 export type Perfil = PerfilInterno | PerfilEntidad | PerfilProveedor
 
-/** Forma de `data` en `GET /auth/me` y `POST /auth/login` (`AuthController::construirMe`). */
+/** Forma de `data` en `GET /auth/me` (`AuthController::construirMe`). */
 export interface SesionMe {
   usuario: Usuario
   permisos: string[]
   menu: MenuItem[]
   perfil: Perfil
+}
+
+/** Forma de `data` en `POST /auth/login` y `POST /auth/registro`: lo mismo que
+ * `SesionMe` más el Bearer token recién emitido (`createToken()->plainTextToken`). */
+export interface SesionConToken extends SesionMe {
+  token: string
 }
 
 export interface LoginInput {
