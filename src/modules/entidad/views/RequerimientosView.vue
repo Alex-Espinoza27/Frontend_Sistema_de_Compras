@@ -7,6 +7,7 @@ import { entidadesApi } from '@/api/entidades.api'
 import { publicoApi } from '@/api/publico.api'
 import { requerimientosApi } from '@/api/requerimientos.api'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useListado } from '@/composables/useListado'
@@ -37,10 +38,15 @@ const { items, paginacion, cargando, params, recargar } = useListado<Requerimien
   'filtros_requerimientos',
 )
 
+const leyendaFiltros = [
+  'El rango de fechas se aplica a la fecha de registro: el día en que se creó el requerimiento. Incluye los dos días completos, a cualquier hora.',
+]
+
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Estado', key: 'activo', sortable: false },
   { title: 'Número', key: 'numero' },
+  { title: 'Fecha de registro', key: 'fecha_creacion' },
   { title: 'Objeto', key: 'objeto' },
   ...(esAdmin ? [{ title: 'Entidad', key: 'entidad', sortable: false }] : []),
   { title: 'Tipo', key: 'tipo' },
@@ -48,7 +54,6 @@ const cabeceras = [
   { title: 'Área usuaria', key: 'area', sortable: false },
   { title: 'N.º ítems', key: 'cantidad_items', sortable: false },
   { title: '¿Convocado?', key: 'tiene_convocatoria', sortable: false },
-  { title: 'Fecha de creación', key: 'fecha_creacion' },
 ]
 
 // Desactivar en vez de eliminar (05C hardening, pedido explícitamente por el
@@ -158,10 +163,11 @@ async function confirmarCambioEstado() {
       <BaseRangoFechas
         v-model:desde="params.desde as string"
         v-model:hasta="params.hasta as string"
-        label="Fecha de creación"
+        label="Fecha de registro"
         style="max-width: 260px"
         @aplicar="recargar()"
       />
+      <BaseLeyendaFiltros :lineas="leyendaFiltros" />
     </div>
 
     <BaseTablaServidor

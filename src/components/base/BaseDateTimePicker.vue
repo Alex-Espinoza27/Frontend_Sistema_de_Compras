@@ -91,23 +91,44 @@ const textoVisible = computed(() => {
         @click:clear="modelValue = ''"
       />
     </template>
-    <v-card>
+    <v-card class="selector-fecha-hora">
       <div class="d-flex align-stretch flex-wrap">
-        <v-date-picker
-          v-model="fechaSeleccionada"
-          color="primary"
-          :min="minFecha"
-          width="300"
-          hide-header
-          show-adjacent-months
-        />
+        <!-- Cada selector va en su propio bloque con aire a los lados: el
+             calendario necesita sus 328 px (7 columnas de 40 px + márgenes) y
+             con menos —antes 300 px— la última columna (sábado) quedaba
+             cortada por la línea que lo separa del reloj. -->
+        <div class="selector-fecha-hora__bloque selector-fecha-hora__bloque--fecha">
+          <v-date-picker
+            v-model="fechaSeleccionada"
+            color="primary"
+            :min="minFecha"
+            hide-header
+            show-adjacent-months
+          />
+        </div>
         <v-divider vertical />
-        <v-time-picker v-model="horaSeleccionada" color="primary" format="24hr" width="300" />
+        <div class="selector-fecha-hora__bloque selector-fecha-hora__bloque--hora">
+          <v-time-picker v-model="horaSeleccionada" color="primary" format="24hr" width="300" />
+        </div>
       </div>
+      <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" color="primary" @click="menuAbierto = false">Listo</v-btn>
+        <v-btn variant="outlined" color="primary" class="px-5" @click="menuAbierto = false">Listo</v-btn>
       </v-card-actions>
     </v-card>
   </v-menu>
 </template>
+
+<style scoped>
+.selector-fecha-hora__bloque {
+  padding: 8px 16px;
+}
+.selector-fecha-hora__bloque--fecha {
+  /* 328 px del calendario + el aire a cada lado. */
+  min-width: 360px;
+}
+.selector-fecha-hora__bloque--hora {
+  min-width: 332px;
+}
+</style>

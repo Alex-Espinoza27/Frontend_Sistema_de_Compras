@@ -8,6 +8,7 @@ import { ref } from 'vue'
 import { convocatoriasApi } from '@/api/convocatorias.api'
 import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useListado } from '@/composables/useListado'
@@ -18,13 +19,21 @@ import { hoyTexto } from '@/utils/fechas'
 
 const ui = useUiStore()
 
-// El filtro de fecha (antes dos `BaseDatePicker` sueltos, 05C hardening)
-// arranca marcado en "Hoy".
+// El filtro de fecha es por FECHA DE REGISTRO (cuándo se creó la convocatoria,
+// días completos, sin importar la hora) y arranca marcado en "Hoy". Usa
+// `registro_desde/hasta`: `desde/hasta` del backend son por cierre de plazo
+// (los usan Evaluación y Adjudicación). La clave de persistencia es nueva
+// para no heredar un rango viejo guardado con el significado anterior.
 const { items, paginacion, cargando, params, recargar } = useListado<ConvocatoriaListaItem>(
   convocatoriasApi.index,
-  { ordenar_por: 'fecha_fin', direccion: 'asc', desde: hoyTexto(), hasta: hoyTexto() },
-  'filtros_convocatorias',
+  { ordenar_por: 'fecha_fin', direccion: 'asc', registro_desde: hoyTexto(), registro_hasta: hoyTexto() },
+  'filtros_convocatorias_registro',
 )
+
+const leyendaFiltros = [
+  'El rango de fechas se aplica a la fecha de registro: el día en que se creó la convocatoria. Incluye los dos días completos, a cualquier hora.',
+  '«Fechas programadas» es el periodo en que la convocatoria recibe ofertas (fecha de inicio – fecha de fin).',
+]
 
 const opcionesEstado = [
   { title: 'Borrador', value: 'BORRADOR' },
@@ -36,14 +45,15 @@ const opcionesEstado = [
 ]
 
 // `sortable` refleja lo que soporta `ConvocatoriaController::index`
-// (fecha_fin/fecha_inicio/numero/estado, 05C hardening); "Fechas" es una
-// columna combinada sin un único campo del backend al que mapear, así que
-// no es ordenable por clic.
+// (fecha_fin/fecha_inicio/fecha_registro/numero/estado); "Fechas programadas"
+// es una columna combinada sin un único campo del backend al que mapear, así
+// que no es ordenable por clic.
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Número', key: 'numero' },
   { title: 'Nombre', key: 'nombre_servicio', sortable: false },
-  { title: 'Fechas', key: 'fechas', sortable: false },
+  { title: 'Fecha de registro', key: 'fecha_registro' },
+  { title: 'Fechas programadas', key: 'fechas', sortable: false },
   { title: 'Estado', key: 'estado' },
   { title: 'Motivo', key: 'motivo_cierre', sortable: false },
   { title: 'Urgencia', key: 'urgencia_dias', sortable: false },
@@ -103,11 +113,13 @@ async function confirmarCancelar(motivo: string | undefined) {
         @update:model-value="recargar()"
       />
       <BaseRangoFechas
-        v-model:desde="params.desde as string"
-        v-model:hasta="params.hasta as string"
+        v-model:desde="params.registro_desde as string"
+        v-model:hasta="params.registro_hasta as string"
+        label="Fecha de registro"
         style="max-width: 260px"
         @aplicar="recargar()"
       />
+      <BaseLeyendaFiltros :lineas="leyendaFiltros" />
     </div>
 
     <v-card variant="flat" :border="false" class="pa-3 mb-4 rounded-lg bg-surface leyenda-estados">
@@ -192,6 +204,9 @@ async function confirmarCancelar(motivo: string | undefined) {
         </div>
       </template>
       <template #item.numero="{ item }">{{ item.numero ?? '— borrador' }}</template>
+      <template #item.fecha_registro="{ item }">
+        {{ dayjs(item.fecha_registro).tz().format('DD/MM/YYYY HH:mm') }}
+      </template>
       <template #item.fechas="{ item }">
         {{ dayjs(item.fecha_inicio).tz().format('DD/MM/YYYY') }} — {{ dayjs(item.fecha_fin).tz().format('DD/MM/YYYY') }}
       </template>

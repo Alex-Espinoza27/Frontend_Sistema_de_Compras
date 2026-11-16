@@ -7,6 +7,7 @@
 // existentes (sin cambios).
 import { convocatoriasApi } from '@/api/convocatorias.api'
 import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useListado } from '@/composables/useListado'
@@ -21,6 +22,12 @@ const { items, paginacion, cargando, params, recargar } = useListado<Convocatori
   { lista_para_evaluar: 'true', ordenar_por: 'fecha_fin', direccion: 'asc', desde: hoyTexto(), hasta: hoyTexto() },
   'filtros_evaluacion',
 )
+
+const leyendaFiltros = [
+  'Se listan las convocatorias vigentes o en evaluación que ya recibieron al menos una oferta: se puede evaluar sin esperar a que venza el plazo.',
+  '«Cierre de plazo» muestra las que cierran dentro del rango elegido (los dos días incluidos, a cualquier hora).',
+  'La búsqueda es por nombre o número de convocatoria.',
+]
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -69,6 +76,7 @@ function progreso(item: ConvocatoriaListaItem): { texto: string; color: string; 
         style="max-width: 260px"
         @aplicar="recargar()"
       />
+      <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
     </div>
 
     <BaseTablaServidor

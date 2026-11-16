@@ -5,6 +5,7 @@
 // muestra convocatorias EN_EVALUACION).
 import { presentacionOfertasApi } from '@/api/presentacionOfertas.api'
 import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useListado } from '@/composables/useListado'
@@ -19,6 +20,12 @@ const { items, paginacion, cargando, params, recargar } = useListado<Presentacio
   { ordenar_por: 'fecha_envio', direccion: 'desc', desde: hoyTexto(), hasta: hoyTexto() },
   'filtros_presentacion_ofertas',
 )
+
+const leyendaFiltros = [
+  'Se listan todas las ofertas recibidas por las convocatorias de la entidad, en cualquier estado.',
+  '«Fecha de envío» filtra por el día en que el proveedor envió su oferta (los dos días incluidos, a cualquier hora).',
+  'La búsqueda es por convocatoria.',
+]
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -72,6 +79,7 @@ const cabeceras = [
         style="max-width: 260px"
         @aplicar="recargar()"
       />
+      <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
     </div>
 
     <v-card variant="flat" :border="false" class="pa-3 mb-4 rounded-lg bg-surface leyenda-estados">

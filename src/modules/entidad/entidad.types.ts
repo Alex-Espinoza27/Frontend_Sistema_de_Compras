@@ -124,6 +124,8 @@ export interface ConvocatoriaListaItem {
   nombre_servicio: string
   fecha_inicio: string
   fecha_fin: string
+  /** Cuándo se creó (registró) la convocatoria. */
+  fecha_registro: string
   estado: Estado
   urgencia_dias: number
   total_ofertas: number

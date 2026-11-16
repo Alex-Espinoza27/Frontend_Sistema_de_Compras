@@ -6,6 +6,7 @@
 // un estado nuevo, decisión confirmada con el usuario). "Ir a Adjudicación"
 // lleva a la pantalla existente (sin cambios).
 import { convocatoriasApi } from '@/api/convocatorias.api'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useListado } from '@/composables/useListado'
@@ -20,6 +21,12 @@ const { items, paginacion, cargando, params, recargar } = useListado<Convocatori
   { lista_para_adjudicar: 'true', ordenar_por: 'fecha_fin', direccion: 'asc', desde: hoyTexto(), hasta: hoyTexto() },
   'filtros_adjudicacion',
 )
+
+const leyendaFiltros = [
+  'Se listan las convocatorias en evaluación que ya no tienen ofertas pendientes de calificar, y las que no recibieron ninguna oferta (para declararlas desiertas).',
+  '«Cierre de plazo» muestra las que cierran dentro del rango elegido (los dos días incluidos, a cualquier hora).',
+  'La búsqueda es por nombre o número de convocatoria.',
+]
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -55,6 +62,7 @@ const cabeceras = [
         style="max-width: 260px"
         @aplicar="recargar()"
       />
+      <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
     </div>
 
     <BaseTablaServidor
