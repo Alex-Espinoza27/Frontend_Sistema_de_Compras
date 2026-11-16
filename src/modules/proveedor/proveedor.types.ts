@@ -35,6 +35,18 @@ export interface PostulacionDatos {
   items: ItemPostulacion[]
   tipos_comprobante: TipoComprobantePostulacion[]
   opciones_validez: number[]
+  /** Límites que valida el backend (`OfertaStoreRequest::limites()`). */
+  limites?: LimitesPostulacion
+}
+
+export interface LimitesPostulacion {
+  marca_modelo: number
+  plazo_garantia: number
+  contacto_nombre: number
+  contacto_telefono: number
+  contacto_correo: number
+  archivo_max_mb: number
+  archivo_formatos: string[]
 }
 
 export interface OfertaItemInput {

@@ -37,9 +37,26 @@ const excedeTamano = computed(() =>
   modelValue.value.some((archivo) => archivo.size > props.maxSizeMb * 1024 * 1024),
 )
 
-const mensajesError = computed(() =>
-  excedeTamano.value ? [`Cada archivo debe pesar como máximo ${props.maxSizeMb} MB.`] : (props.errorMessages ?? []),
+const extensionesPermitidas = computed(() =>
+  props.accept
+    .split(',')
+    .map((e) => e.trim().toLowerCase().replace(/^\./, ''))
+    .filter(Boolean),
 )
+
+const formatoInvalido = computed(() =>
+  modelValue.value.some((archivo) => !extensionesPermitidas.value.includes(archivo.name.split('.').pop()?.toLowerCase() ?? '')),
+)
+
+const mensajesError = computed(() => {
+  if (formatoInvalido.value) {
+    const lista = extensionesPermitidas.value.map((e) => e.toUpperCase())
+    const texto = lista.length > 1 ? `${lista.slice(0, -1).join(', ')} o ${lista[lista.length - 1]}` : (lista[0] ?? '')
+    return [`Solo se permiten archivos ${texto}.`]
+  }
+  if (excedeTamano.value) return [`Cada archivo debe pesar como máximo ${props.maxSizeMb} MB.`]
+  return props.errorMessages ?? []
+})
 </script>
 
 <template>

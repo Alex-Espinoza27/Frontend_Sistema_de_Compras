@@ -140,6 +140,36 @@ code {
   border-radius: 50% !important;
 }
 
+/* --- Botones: que se distingan del fondo de la pantalla ---------------------
+   El default global de VBtn (plugins/vuetify.ts) es `flat` sin color, y
+   Vuetify lo dibuja con el color `surface` (blanco): sobre el fondo de la
+   pantalla casi no se ve, y deshabilitado menos aún. Los botones que declaran
+   su color (`bg-*` / `text-*`) no se tocan; el resto toma el color primario. */
+.v-btn.v-btn--variant-flat:not([class*='bg-']):not(.v-btn--disabled) {
+  background-color: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+}
+.v-btn.v-btn--variant-flat:not([class*='bg-']).v-btn--disabled {
+  background-color: rgba(var(--v-theme-primary), 0.1);
+  color: rgba(var(--v-theme-primary), 0.55);
+  border: 1px solid rgba(var(--v-theme-primary), 0.35);
+}
+
+/* Con borde: relleno de superficie y borde más firme, para que no se pierdan. */
+.v-btn.v-btn--variant-outlined {
+  border-width: 1.5px;
+  background-color: rgb(var(--v-theme-surface));
+}
+.v-btn.v-btn--variant-outlined:not([class*='text-']):not(.v-btn--disabled) {
+  color: rgb(var(--v-theme-primary));
+  border-color: rgb(var(--v-theme-primary));
+}
+
+/* Tonales: su fondo es el propio color al 12 %, casi invisible sobre el blanco. */
+.v-btn.v-btn--variant-tonal:not(.v-btn--disabled) {
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+}
+
 /* No forzar animation/transition-duration global bajo prefers-reduced-motion:
    Vuetify posiciona menús (v-select, pickers) durante su transición de
    apertura y con la duración forzada quedan fuera de lugar dentro de modales
