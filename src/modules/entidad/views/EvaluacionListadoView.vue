@@ -61,6 +61,8 @@ function progreso(item: ConvocatoriaListaItem): { texto: string; color: string; 
       </v-btn>
     </div>
 
+    <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
+
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
@@ -76,7 +78,6 @@ function progreso(item: ConvocatoriaListaItem): { texto: string; color: string; 
         style="max-width: 260px"
         @aplicar="recargar()"
       />
-      <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
     </div>
 
     <BaseTablaServidor

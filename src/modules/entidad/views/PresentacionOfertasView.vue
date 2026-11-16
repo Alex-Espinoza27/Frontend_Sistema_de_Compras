@@ -49,6 +49,8 @@ const cabeceras = [
       </v-btn>
     </div>
 
+    <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
+
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
@@ -79,7 +81,6 @@ const cabeceras = [
         style="max-width: 260px"
         @aplicar="recargar()"
       />
-      <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
     </div>
 
     <v-card variant="flat" :border="false" class="pa-3 mb-4 rounded-lg bg-surface leyenda-estados">

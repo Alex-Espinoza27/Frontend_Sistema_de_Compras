@@ -96,6 +96,8 @@ async function confirmarCancelar(motivo: string | undefined) {
       </div>
     </div>
 
+    <BaseLeyendaFiltros :lineas="leyendaFiltros" />
+
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
@@ -119,7 +121,6 @@ async function confirmarCancelar(motivo: string | undefined) {
         style="max-width: 260px"
         @aplicar="recargar()"
       />
-      <BaseLeyendaFiltros :lineas="leyendaFiltros" />
     </div>
 
     <v-card variant="flat" :border="false" class="pa-3 mb-4 rounded-lg bg-surface leyenda-estados">

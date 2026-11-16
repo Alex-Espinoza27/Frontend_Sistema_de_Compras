@@ -102,6 +102,8 @@ async function confirmarCambioEstado() {
       </div>
     </div>
 
+    <BaseLeyendaFiltros :lineas="leyendaFiltros" />
+
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
@@ -167,7 +169,6 @@ async function confirmarCambioEstado() {
         style="max-width: 260px"
         @aplicar="recargar()"
       />
-      <BaseLeyendaFiltros :lineas="leyendaFiltros" />
     </div>
 
     <BaseTablaServidor

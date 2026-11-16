@@ -47,6 +47,8 @@ const cabeceras = [
       </v-btn>
     </div>
 
+    <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
+
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
@@ -62,7 +64,6 @@ const cabeceras = [
         style="max-width: 260px"
         @aplicar="recargar()"
       />
-      <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
     </div>
 
     <BaseTablaServidor
