@@ -5,9 +5,11 @@ import type {
   ConsultarRucRespuesta,
   LoginInput,
   RecuperarPasswordInput,
+  RecuperarPasswordRespuesta,
   RegistroProveedorInput,
   RestablecerPasswordInput,
   SesionMe,
+  ValidarEnlaceRespuesta,
 } from '@/modules/auth/auth.types'
 
 export const authApi = {
@@ -18,7 +20,10 @@ export const authApi = {
   consultarRuc: (body: ConsultarRucInput) =>
     cliente.post<never, ConsultarRucRespuesta>('/auth/registro/consultar-ruc', body),
   registro: (body: RegistroProveedorInput) => cliente.post<never, SesionMe>('/auth/registro', body),
-  recuperarPassword: (body: RecuperarPasswordInput) => cliente.post<never, null>('/auth/recuperar-password', body),
+  recuperarPassword: (body: RecuperarPasswordInput) =>
+    cliente.post<never, RecuperarPasswordRespuesta>('/auth/recuperar-password', body),
+  validarEnlaceRestablecer: (token: string, email: string) =>
+    cliente.get<never, ValidarEnlaceRespuesta>('/auth/restablecer-password/validar', { params: { token, email } }),
   restablecerPassword: (body: RestablecerPasswordInput) =>
     cliente.post<never, null>('/auth/restablecer-password', body),
 }

@@ -93,6 +93,17 @@ export interface RecuperarPasswordInput {
   captcha: string
 }
 
+/** `data` de `POST /auth/recuperar-password` (igual exista o no el correo). */
+export interface RecuperarPasswordRespuesta {
+  vigencia_minutos: number
+}
+
+/** `data` de `GET /auth/restablecer-password/validar`. */
+export interface ValidarEnlaceRespuesta {
+  valido: boolean
+  expira_en_segundos: number | null
+}
+
 export interface RestablecerPasswordInput {
   token: string
   email: string
