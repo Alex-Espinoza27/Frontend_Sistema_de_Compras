@@ -140,13 +140,12 @@ code {
   border-radius: 50% !important;
 }
 
+/* No forzar animation/transition-duration global bajo prefers-reduced-motion:
+   Vuetify posiciona menús (v-select, pickers) durante su transición de
+   apertura y con la duración forzada quedan fuera de lugar dentro de modales
+   (pasa en Windows Server/RDP, que reporta animaciones desactivadas). */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  html {
     scroll-behavior: auto !important;
   }
 }
