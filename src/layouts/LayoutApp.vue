@@ -4,6 +4,7 @@ import { onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 import BaseSnackbar from '@/components/base/BaseSnackbar.vue'
+import ModalSesionCaducada from '@/components/base/ModalSesionCaducada.vue'
 import AppBar from '@/components/layout/AppBar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNotificacionesStore } from '@/stores/notificaciones.store'
@@ -29,5 +30,6 @@ onUnmounted(() => notificaciones.detenerPolling())
       <router-view :key="route.fullPath" />
     </v-main>
     <BaseSnackbar />
+    <ModalSesionCaducada />
   </v-app>
 </template>

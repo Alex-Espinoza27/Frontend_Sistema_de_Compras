@@ -38,6 +38,9 @@ export interface SesionMe {
   permisos: string[]
   menu: MenuItem[]
   perfil: Perfil
+  /** Tope absoluto de sesión, en segundos restantes (`null` = sin tope). Es
+   * relativo para que el reloj del navegador no pueda desfasarlo. */
+  sesion?: { expira_en_segundos: number | null }
 }
 
 export interface LoginInput {

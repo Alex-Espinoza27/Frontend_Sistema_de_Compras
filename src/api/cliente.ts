@@ -57,18 +57,18 @@ cliente.interceptors.response.use(
       case 401:
       case 419: {
         // 419 = CSRF/sesión vencida (Laravel/Sanctum, no está en la tabla de
-        // 03/05A porque es de framework, no de negocio) — se trata como 401:
-        // limpia la sesión local y, si aplica, manda a /login.
+        // 03/05A porque es de framework, no de negocio) — se trata como 401.
         const auth = useAuthStore()
         const estabaAutenticado = auth.autenticado
-        auth.limpiarSesion()
-        // Solo redirige si la sesión se cae dentro del área protegida; un 401
-        // anónimo (bootstrap, login fallido) no debe interrumpir la navegación.
+        // Logout voluntario en curso: su propio 401 no es una caducidad.
+        if (auth.cerrandoSesion) break
+        // Solo avisa dentro del área protegida; un 401 anónimo (bootstrap,
+        // login fallido) no debe interrumpir la navegación. El aviso
+        // (ModalSesionCaducada) limpia la sesión y redirige al login al terminar.
         if (estabaAutenticado && router.currentRoute.value.path.startsWith('/app')) {
-          router.push({
-            path: '/login',
-            query: { redirect: router.currentRoute.value.fullPath },
-          })
+          auth.marcarCaducada()
+        } else {
+          auth.limpiarSesion()
         }
         break
       }
