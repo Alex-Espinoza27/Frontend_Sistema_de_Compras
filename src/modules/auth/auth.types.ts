@@ -96,6 +96,8 @@ export interface RecuperarPasswordInput {
 /** `data` de `POST /auth/recuperar-password` (igual exista o no el correo). */
 export interface RecuperarPasswordRespuesta {
   vigencia_minutos: number
+  /** Segundos que deben pasar antes de poder pedir otro envío del enlace. */
+  reintento_en_segundos: number
 }
 
 /** `data` de `GET /auth/restablecer-password/validar`. */

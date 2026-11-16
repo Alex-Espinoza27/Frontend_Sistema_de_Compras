@@ -1,9 +1,13 @@
 <script setup lang="ts">
 // B3 — Recuperación de contraseña. El backend responde igual exista o no el
 // correo (no revela qué cuentas hay). Al enviar, muestra la cuenta regresiva
-// de vigencia del enlace (10 min, la define el backend en `vigencia_minutos`).
-// 05C hardening (pedido explícitamente por el usuario): captcha (mismo
-// mecanismo que Registro) y diseño igual al de Login (AuthSplitLayout).
+// de vigencia del enlace (10 min) y un "Reintentar envío" por si el correo no
+// llega: se bloquea el tiempo que indica el backend (`reintento_en_segundos`,
+// el mismo en que el broker permite emitir otro enlace) y se desbloquea solo.
+// Cada reintento necesita un captcha nuevo (el reto se consume al verificar)
+// y emite un enlace nuevo: el anterior deja de servir.
+// 05C hardening (pedido explícitamente por el usuario): captcha y diseño
+// igual al de Login (AuthSplitLayout).
 import { computed, ref } from 'vue'
 
 import { authApi } from '@/api/auth.api'
@@ -15,6 +19,7 @@ import { email as reglaEmail, requerido } from '@/utils/validaciones'
 
 const captcha = useCaptcha()
 const cuenta = useCuentaRegresiva()
+const reintento = useCuentaRegresiva()
 
 const beneficios = [
   { icono: 'mdi-email-fast-outline', texto: 'Enlace enviado al instante' },
@@ -27,34 +32,59 @@ const email = ref('')
 const formValido = ref(false)
 const enviando = ref(false)
 const enviado = ref(false)
+const reenviado = ref(false)
+const errorGeneral = ref('')
 const vigenciaSegundos = ref(600)
 const erroresCampo = ref<Record<string, string[]>>({})
 
 const progreso = computed(() => (vigenciaSegundos.value ? (cuenta.restantes.value / vigenciaSegundos.value) * 100 : 0))
+const reintentoBloqueado = computed(() => reintento.restantes.value > 0)
 
-async function enviar() {
-  if (!formValido.value) return
+/** Pide el enlace y arranca las dos cuentas regresivas. Devuelve si salió bien. */
+async function solicitar(): Promise<boolean> {
   enviando.value = true
+  errorGeneral.value = ''
   erroresCampo.value = {}
   try {
     const respuesta = await authApi.recuperarPassword({ email: email.value, captcha: captcha.valor.value })
     vigenciaSegundos.value = (respuesta?.vigencia_minutos ?? 10) * 60
     cuenta.iniciar(vigenciaSegundos.value)
-    enviado.value = true
+    reintento.iniciar(respuesta?.reintento_en_segundos ?? 60)
+    return true
   } catch (e: unknown) {
-    const error = e as { response?: { status?: number; data?: { errores?: Record<string, string[]> } } }
+    const error = e as { response?: { status?: number; data?: { mensaje?: string | null; errores?: Record<string, string[]> } } }
     if (error.response?.status === 422) {
       erroresCampo.value = error.response.data?.errores ?? {}
+      if (!Object.keys(erroresCampo.value).length) {
+        errorGeneral.value = error.response.data?.mensaje ?? 'No se pudo enviar el enlace.'
+      }
     }
-    await captcha.recargar()
+    return false
   } finally {
+    // El reto se consume al verificar (acierte o no): siempre hace falta uno nuevo.
+    await captcha.recargar()
     enviando.value = false
   }
 }
 
+async function enviar() {
+  if (!formValido.value) return
+  reenviado.value = false
+  if (await solicitar()) enviado.value = true
+}
+
+async function reintentar() {
+  if (reintentoBloqueado.value || !captcha.respuesta.value) return
+  reenviado.value = false
+  if (await solicitar()) reenviado.value = true
+}
+
 async function solicitarOtro() {
   cuenta.detener()
+  reintento.detener()
   enviado.value = false
+  reenviado.value = false
+  errorGeneral.value = ''
   await captcha.recargar()
 }
 </script>
@@ -67,7 +97,7 @@ async function solicitarOtro() {
     tarjeta-titulo="Recuperar contraseña"
     :tarjeta-subtitulo="enviado ? undefined : 'Ingrese su correo y le enviaremos un enlace para restablecerla.'"
   >
-    <!-- Enlace enviado: cuenta regresiva de vigencia -->
+    <!-- Enlace enviado: cuenta regresiva de vigencia + reintentar envío -->
     <div v-if="enviado" class="text-center">
       <v-avatar :color="cuenta.vencida.value ? 'warning' : 'success'" variant="tonal" size="64" class="mb-4">
         <v-icon :icon="cuenta.vencida.value ? 'mdi-timer-off-outline' : 'mdi-email-check-outline'" size="32" />
@@ -81,7 +111,48 @@ async function solicitarOtro() {
         </p>
         <div class="text-caption text-medium-emphasis">El enlace vence en</div>
         <div class="cuenta" aria-live="polite">{{ cuenta.formato.value }}</div>
-        <v-progress-linear :model-value="progreso" color="primary" height="6" rounded class="mt-2" />
+        <v-progress-linear :model-value="progreso" color="primary" height="6" rounded class="mt-2 mb-6" />
+
+        <v-divider class="mb-5" />
+
+        <div class="text-left">
+          <div class="text-body-2 font-weight-medium mb-1">¿No le llegó el correo?</div>
+          <p class="text-caption text-medium-emphasis mb-3">
+            Puede pedir que se lo enviemos de nuevo. El enlace anterior dejará de funcionar.
+          </p>
+
+          <v-alert
+            v-if="reenviado"
+            type="success"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+            text="Enviamos un nuevo enlace. Revise su correo."
+          />
+          <v-alert v-if="errorGeneral" type="error" variant="tonal" density="compact" class="mb-3" :text="errorGeneral" />
+
+          <BaseCaptcha
+            v-model:respuesta="captcha.respuesta.value"
+            :imagen="captcha.imagen.value"
+            :cargando="captcha.cargando.value"
+            :error-messages="erroresCampo.captcha"
+            class="mb-3"
+            @recargar="captcha.recargar"
+          />
+
+          <v-btn
+            block
+            size="large"
+            variant="outlined"
+            class="btn-secundario"
+            prepend-icon="mdi-email-sync-outline"
+            :loading="enviando"
+            :disabled="reintentoBloqueado || !captcha.respuesta.value"
+            @click="reintentar"
+          >
+            {{ reintentoBloqueado ? `Podrá reintentar en ${reintento.formato.value}` : 'Reintentar envío' }}
+          </v-btn>
+        </div>
       </template>
 
       <template v-else>
@@ -93,6 +164,8 @@ async function solicitarOtro() {
 
     <!-- Formulario -->
     <v-form v-else v-model="formValido" @submit.prevent="enviar">
+      <v-alert v-if="errorGeneral" type="error" variant="tonal" density="comfortable" class="mb-4" :text="errorGeneral" />
+
       <v-text-field
         v-model="email"
         type="email"

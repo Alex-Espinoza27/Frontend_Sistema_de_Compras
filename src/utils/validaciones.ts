@@ -12,9 +12,16 @@ export function requerido(mensaje = 'Este campo es obligatorio.'): Regla {
   }
 }
 
-export function email(mensaje = 'Ingrese un correo válido.'): Regla {
-  const patron = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return (valor) => !valor || patron.test(String(valor)) || mensaje
+// Misma exigencia que la regla `email` del backend (Laravel): la parte local no
+// puede empezar ni terminar con punto ni tener dos seguidos (`nombre.@x.com`
+// es inválido), y el dominio necesita al menos un punto con extensión.
+const CARACTERES_LOCAL = String.raw`[A-Za-z0-9!#$%&'*+/=?^_${'`'}{|}~-]+`
+const LOCAL_CORREO = String.raw`${CARACTERES_LOCAL}(?:\.${CARACTERES_LOCAL})*`
+const DOMINIO_CORREO = String.raw`(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,}`
+const PATRON_CORREO = new RegExp(`^${LOCAL_CORREO}@${DOMINIO_CORREO}$`)
+
+export function email(mensaje = 'Ingrese un correo válido, por ejemplo nombre@dominio.com.'): Regla {
+  return (valor) => !valor || PATRON_CORREO.test(String(valor).trim()) || mensaje
 }
 
 export function colorHex(mensaje = 'Debe ser un color hexadecimal, ej. #0090D8.'): Regla {
@@ -48,3 +55,9 @@ export function maxLongitud(limite: number, mensaje?: string): Regla {
       : String(valor).length <= limite || (mensaje ?? `El máximo es de ${limite} caracteres.`)
 }
 
+export function minLongitud(limite: number, mensaje?: string): Regla {
+  return (valor) =>
+    valor === null || valor === undefined || valor === ''
+      ? true
+      : String(valor).length >= limite || (mensaje ?? `El mínimo es de ${limite} caracteres.`)
+}

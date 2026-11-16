@@ -11,8 +11,16 @@ import { useRoute } from 'vue-router'
 import { authApi } from '@/api/auth.api'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
 import { useCuentaRegresiva } from '@/composables/useCuentaRegresiva'
+import { minLongitud, requerido } from '@/utils/validaciones'
 
 type Estado = 'verificando' | 'valido' | 'invalido' | 'exito'
+
+// Mismo mínimo que exige el backend (RestablecerPasswordRequest).
+const MIN_PASSWORD = 8
+const reglasPassword = [
+  requerido('Ingrese una contraseña.'),
+  minLongitud(MIN_PASSWORD, `La contraseña debe tener al menos ${MIN_PASSWORD} caracteres.`),
+]
 
 const route = useRoute()
 const cuenta = useCuentaRegresiva()
@@ -38,6 +46,7 @@ const erroresCampo = ref<Record<string, string[]>>({})
 const passwordsCoinciden = computed(
   () => !form.password_confirmation || form.password === form.password_confirmation,
 )
+const passwordValida = computed(() => form.password.length >= MIN_PASSWORD)
 const progreso = computed(() => (vigenciaSegundos.value ? (cuenta.restantes.value / vigenciaSegundos.value) * 100 : 0))
 const casiVencido = computed(() => cuenta.restantes.value > 0 && cuenta.restantes.value <= 60)
 
@@ -151,7 +160,10 @@ async function enviar() {
         autocomplete="new-password"
         prepend-inner-icon="mdi-lock-outline"
         :append-inner-icon="mostrarPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+        :rules="reglasPassword"
         :error-messages="erroresCampo.password"
+        hint="Mínimo 8 caracteres"
+        persistent-hint
         class="mb-2"
         autofocus
         @click:append-inner="mostrarPassword = !mostrarPassword"
@@ -173,7 +185,7 @@ async function enviar() {
         size="large"
         class="btn-principal"
         :loading="enviando"
-        :disabled="!form.password || !form.password_confirmation || !passwordsCoinciden || cuenta.vencida.value"
+        :disabled="!passwordValida || !form.password_confirmation || !passwordsCoinciden || cuenta.vencida.value"
       >
         Restablecer
       </v-btn>
