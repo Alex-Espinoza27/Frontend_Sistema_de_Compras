@@ -19,6 +19,19 @@ interface EstadoAuth {
   cerrandoSesion: boolean
 }
 
+/** Filtros de listados guardados en sessionStorage (useListado, claves
+ * `filtros_*`): son del usuario que cierra sesión y no deben verlos el
+ * siguiente que inicie sesión en la misma pestaña. */
+function limpiarFiltrosGuardados() {
+  try {
+    for (const clave of Object.keys(sessionStorage)) {
+      if (clave.startsWith('filtros_')) sessionStorage.removeItem(clave)
+    }
+  } catch {
+    // sessionStorage no disponible (modo privado estricto): nada que limpiar.
+  }
+}
+
 export const useAuthStore = defineStore('auth', {
   state: (): EstadoAuth => ({
     usuario: null,
@@ -49,6 +62,7 @@ export const useAuthStore = defineStore('auth', {
       this.menu = []
       this.perfil = null
       this.expiraEn = null
+      limpiarFiltrosGuardados()
     },
     marcarCaducada() {
       this.sesionCaducada = true

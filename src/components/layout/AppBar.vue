@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import AppHeaderNav from './AppHeaderNav.vue'
 import DialogoCambiarPassword from './DialogoCambiarPassword.vue'
 import PanelNotificaciones from './PanelNotificaciones.vue'
-import logoLaPerla from '@/assets/logo-la-perla.png'
+import logoLaPerla from '@/assets/logo_compras.jpg'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 
@@ -125,7 +125,7 @@ async function cerrarSesion() {
 }
 
 .logo-imagen {
-  height: 38px;
+  height: 44px;
   width: auto;
   max-width: 100%;
   object-fit: contain;
