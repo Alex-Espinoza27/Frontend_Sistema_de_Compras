@@ -22,11 +22,11 @@ const { items, paginacion, cargando, params, recargar } = useListado<Convocatori
   'filtros_adjudicacion',
 )
 
-const leyendaFiltros = [
-  'Se listan las convocatorias en evaluación que ya no tienen ofertas pendientes de calificar, y las que no recibieron ninguna oferta (para declararlas desiertas).',
-  '«Cierre de plazo» muestra las que cierran dentro del rango elegido (los dos días incluidos, a cualquier hora).',
-  'La búsqueda es por nombre o número de convocatoria.',
-]
+const leyenda = {
+  proposito: "Convocatorias listas para adjudicar al ganador, o para declararlas desiertas si no hubo ofertas.",
+  columnas: "Cierre de plazo y N.º ofertas.",
+  fechas: "Por cierre de plazo, días completos, a cualquier hora.",
+}
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -47,7 +47,7 @@ const cabeceras = [
       </v-btn>
     </div>
 
-    <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field

@@ -10,6 +10,7 @@ import { ref } from 'vue'
 import { auditoriaApi } from '@/api/auditoria.api'
 import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import { useDescarga } from '@/composables/useDescarga'
 import { useListado } from '@/composables/useListado'
 import dayjs from '@/plugins/dayjs'
@@ -54,6 +55,13 @@ const opcionesModulo = [
 // `AuditoriaController::index` siempre ordena por AUDI_FECHA (no lee
 // ordenar_por, 05C hardening); solo "Fecha" es realmente ordenable — el
 // resto no tiene ningún campo de orden propio en el backend.
+const leyenda = {
+  proposito: "Registro de quién hizo qué en el sistema: ingresos, altas, cambios y decisiones.",
+  columnas: "Fecha, Usuario, Módulo y Acción.",
+  fechas: "Por fecha del evento, días completos, a cualquier hora.",
+  filtros: "Buscar por endpoint o módulo, y filtrar por módulo, acción y tabla.",
+}
+
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Fecha', key: 'fecha' },
@@ -105,6 +113,8 @@ function exportar() {
         </v-btn>
       </div>
     </div>
+
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field

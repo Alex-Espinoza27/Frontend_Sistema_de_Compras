@@ -13,6 +13,7 @@ import { entidadesApi } from '@/api/entidades.api'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import BaseDatePicker from '@/components/base/BaseDatePicker.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import { useListado } from '@/composables/useListado'
 import type { EntidadListaItem, TipoDocumentoUsuario } from '@/modules/muni/muni.types'
 import type { UsuarioPlataformaItem } from '@/modules/muni/muni.types'
@@ -49,6 +50,12 @@ adminApi.tiposDocumento().then((data) => {
     .filter((t) => t.activo && t.codigo !== 'RUC')
     .map((t) => ({ title: `${t.codigo} — ${t.nombre}`, value: t.codigo as TipoDocumentoUsuario }))
 })
+
+const leyenda = {
+  proposito: "Usuarios internos del sistema (administradores y entidades) y sus accesos.",
+  columnas: "Estado, Documento, Rol y Entidad.",
+  filtros: "Buscar por DNI, nombre o correo, y filtrar por rol.",
+}
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -266,6 +273,8 @@ async function confirmarRestablecerPassword() {
         </v-btn>
       </div>
     </div>
+
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field

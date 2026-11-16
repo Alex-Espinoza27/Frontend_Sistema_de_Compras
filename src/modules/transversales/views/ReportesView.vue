@@ -23,6 +23,7 @@ import { publicoApi } from '@/api/publico.api'
 import { reportesApi } from '@/api/reportes.api'
 import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import { useDescarga } from '@/composables/useDescarga'
 import type { AreaItem } from '@/modules/entidad/entidad.types'
 import type { EntidadListaItem, ProveedorAdminItem, TipoComprobanteAdmin } from '@/modules/muni/muni.types'
@@ -211,6 +212,12 @@ const pageId = computed(() => (tipo.value === 'POR_PROVEEDOR' ? 'oferta_id' : 'c
 // `sortable` refleja exactamente `ReporteController::COLUMNAS_ORDEN` por
 // tipo (05C hardening) — las mismas 2 opciones que ya ofrece el selector
 // "Ordenar por"; el resto de columnas no es ordenable por clic.
+const leyenda = {
+  proposito: "Reportes para consultar y exportar a Excel o PDF; cambia el tipo de reporte arriba.",
+  fechas: "Adjudicación y Por dependencia: fecha del resultado. Por período: fecha de publicación. Por proveedor: fecha de envío de la oferta.",
+  filtros: "Entidad, tipo, rubro, área, proveedor y estado, según el reporte elegido.",
+}
+
 const cabeceras = computed(() => {
   const permitidas = opcionesOrden[tipo.value].map((o) => o.value)
   return configColumnas[tipo.value].map((col) => ({ ...col, sortable: permitidas.includes(col.key) }))
@@ -320,6 +327,8 @@ function filtrosActuales() {
         </v-btn>
       </div>
     </div>
+
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-select v-model="tipo" :items="opcionesTipo" label="Tipo de reporte" style="max-width: 200px" />

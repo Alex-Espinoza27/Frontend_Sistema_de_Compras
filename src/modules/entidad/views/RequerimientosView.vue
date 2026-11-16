@@ -38,9 +38,11 @@ const { items, paginacion, cargando, params, recargar } = useListado<Requerimien
   'filtros_requerimientos',
 )
 
-const leyendaFiltros = [
-  'El rango de fechas se aplica a la fecha de registro: el día en que se creó el requerimiento. Incluye los dos días completos, a cualquier hora.',
-]
+const leyenda = {
+  proposito: "Necesidades de bienes o servicios de tu entidad; de aquí se crea una convocatoria.",
+  columnas: "Objeto, Área usuaria y ¿Convocado? (si ya tiene una convocatoria).",
+  fechas: "Por fecha de registro (cuándo se creó), días completos, a cualquier hora.",
+}
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -102,7 +104,7 @@ async function confirmarCambioEstado() {
       </div>
     </div>
 
-    <BaseLeyendaFiltros :lineas="leyendaFiltros" />
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field

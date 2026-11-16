@@ -23,11 +23,11 @@ const { items, paginacion, cargando, params, recargar } = useListado<Convocatori
   'filtros_evaluacion',
 )
 
-const leyendaFiltros = [
-  'Se listan las convocatorias vigentes o en evaluación que ya recibieron al menos una oferta: se puede evaluar sin esperar a que venza el plazo.',
-  '«Cierre de plazo» muestra las que cierran dentro del rango elegido (los dos días incluidos, a cualquier hora).',
-  'La búsqueda es por nombre o número de convocatoria.',
-]
+const leyenda = {
+  proposito: "Convocatorias con ofertas para calificar; no hace falta esperar al cierre del plazo.",
+  columnas: "Cierre de plazo, N.º ofertas y Progreso (ofertas ya calificadas).",
+  fechas: "Por cierre de plazo, días completos, a cualquier hora.",
+}
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -61,7 +61,7 @@ function progreso(item: ConvocatoriaListaItem): { texto: string; color: string; 
       </v-btn>
     </div>
 
-    <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field

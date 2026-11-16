@@ -30,11 +30,6 @@ const { items, paginacion, cargando, params, recargar } = useListado<Convocatori
   'filtros_convocatorias_registro',
 )
 
-const leyendaFiltros = [
-  'El rango de fechas se aplica a la fecha de registro: el día en que se creó la convocatoria. Incluye los dos días completos, a cualquier hora.',
-  '«Fechas programadas» es el periodo en que la convocatoria recibe ofertas (fecha de inicio – fecha de fin).',
-]
-
 const opcionesEstado = [
   { title: 'Borrador', value: 'BORRADOR' },
   { title: 'Convocatoria Vigente', value: 'PUBLICADA' },
@@ -48,6 +43,12 @@ const opcionesEstado = [
 // (fecha_fin/fecha_inicio/fecha_registro/numero/estado); "Fechas programadas"
 // es una columna combinada sin un único campo del backend al que mapear, así
 // que no es ordenable por clic.
+const leyenda = {
+  proposito: "Convocatorias que publicó tu entidad para recibir ofertas, en cualquier estado.",
+  columnas: "Estado, N.º ofertas y Fechas programadas (inicio – fin para recibir ofertas).",
+  fechas: "Por fecha de registro (cuándo se creó), días completos, a cualquier hora.",
+}
+
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Número', key: 'numero' },
@@ -96,7 +97,7 @@ async function confirmarCancelar(motivo: string | undefined) {
       </div>
     </div>
 
-    <BaseLeyendaFiltros :lineas="leyendaFiltros" />
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field

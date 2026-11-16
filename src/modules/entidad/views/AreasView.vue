@@ -8,6 +8,7 @@ import { computed, reactive, ref } from 'vue'
 import { areasApi } from '@/api/areas.api'
 import { entidadesApi } from '@/api/entidades.api'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import { useListado } from '@/composables/useListado'
 import type { AreaItem } from '@/modules/entidad/entidad.types'
 import type { EntidadListaItem } from '@/modules/muni/muni.types'
@@ -35,6 +36,11 @@ const { items, paginacion, cargando, params, recargar } = useListado<AreaItem>(a
   ordenar_por: 'nombre',
   direccion: 'asc',
 })
+
+const leyenda = {
+  proposito: "Áreas usuarias de la entidad; se eligen al crear un requerimiento.",
+  columnas: "Nombre, Sigla y Estado (activa o no).",
+}
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -121,6 +127,8 @@ async function alternarActivo(item: AreaItem) {
         </v-btn>
       </div>
     </div>
+
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-select

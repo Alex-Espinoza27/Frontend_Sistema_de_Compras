@@ -6,6 +6,7 @@ import { entidadesApi } from '@/api/entidades.api'
 import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import { useListado } from '@/composables/useListado'
 import type { EntidadListaItem } from '@/modules/muni/muni.types'
 import { useUiStore } from '@/stores/ui.store'
@@ -26,6 +27,12 @@ const opcionesEstado = [
 
 // `sortable` refleja lo que soporta `EntidadController::index`
 // (razon_social/fecha_solicitud, 05C hardening).
+const leyenda = {
+  proposito: "Entidades que solicitaron usar el sistema; aquí se aprueban, observan o suspenden.",
+  columnas: "Estado, RUC, Fecha de solicitud y N.º convocatorias.",
+  filtros: "Buscar por razón social, RUC o sigla, y filtrar por estado.",
+}
+
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Estado', key: 'estado', sortable: false },
@@ -94,6 +101,8 @@ async function reactivar(id: number) {
         </v-btn>
       </div>
     </div>
+
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field

@@ -21,11 +21,11 @@ const { items, paginacion, cargando, params, recargar } = useListado<Presentacio
   'filtros_presentacion_ofertas',
 )
 
-const leyendaFiltros = [
-  'Se listan todas las ofertas recibidas por las convocatorias de la entidad, en cualquier estado.',
-  '«Fecha de envío» filtra por el día en que el proveedor envió su oferta (los dos días incluidos, a cualquier hora).',
-  'La búsqueda es por convocatoria.',
-]
+const leyenda = {
+  proposito: "Ofertas que enviaron los proveedores a tus convocatorias, en cualquier estado.",
+  columnas: "Constancia, Proveedor, Total y Estado de la oferta.",
+  fechas: "Por fecha de envío de la oferta, días completos, a cualquier hora.",
+}
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -49,7 +49,7 @@ const cabeceras = [
       </v-btn>
     </div>
 
-    <BaseLeyendaFiltros titulo="¿Qué muestra este listado?" :lineas="leyendaFiltros" />
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field

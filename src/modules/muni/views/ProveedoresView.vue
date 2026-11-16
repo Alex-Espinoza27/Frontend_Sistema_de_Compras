@@ -8,6 +8,7 @@ import { adminApi } from '@/api/admin.api'
 import BaseChipEstado from '@/components/base/BaseChipEstado.vue'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
+import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import { useListado } from '@/composables/useListado'
 import ModalProveedorForm from '@/modules/muni/components/ModalProveedorForm.vue'
 import type { ProveedorAdminItem } from '@/modules/muni/muni.types'
@@ -16,6 +17,12 @@ import { useUiStore } from '@/stores/ui.store'
 const ui = useUiStore()
 
 const { items, paginacion, cargando, params, recargar } = useListado<ProveedorAdminItem>(adminApi.proveedores, {})
+
+const leyenda = {
+  proposito: "Proveedores registrados que pueden postular; aquí se suspenden o reactivan.",
+  columnas: "Estado, RUC/DNI, Tipo y Razón social.",
+  filtros: "Buscar por razón social o RUC/DNI, y filtrar por estado.",
+}
 
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
@@ -86,6 +93,8 @@ async function confirmarCambioEstado() {
         </v-btn>
       </div>
     </div>
+
+    <BaseLeyendaFiltros v-bind="leyenda" />
 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
