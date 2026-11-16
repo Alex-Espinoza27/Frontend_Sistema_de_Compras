@@ -16,7 +16,7 @@ const route = useRoute()
 
 const nombreApp = import.meta.env.VITE_APP_NOMBRE || 'Compras La Perla'
 const CLAVE_RECORDAR = 'compras.usuario_recordado'
-
+import logoLaPerla from '@/assets/logo_compras.jpg'
 const form = reactive({ email: '', password: '' })
 const formValido = ref(false)
 const mostrarPassword = ref(false)
@@ -86,7 +86,7 @@ async function enviar() {
     <aside class="lateral d-none d-md-flex">
       <div class="lateral__interno">
         <router-link to="/" class="marca" aria-label="Ir al inicio">
-          <!--<img src="/escudo.png" alt="" class="marca__escudo" />-->
+          <v-img :src="logoLaPerla" width="100px" rounded="xl"></v-img>
           <span class="marca__texto">
             <span class="marca__linea">Municipalidad Distrital de</span>
             <span class="marca__nombre">La Perla</span>

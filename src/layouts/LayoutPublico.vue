@@ -5,7 +5,7 @@
 import { computed } from 'vue'
 
 import BaseSnackbar from '@/components/base/BaseSnackbar.vue'
-import logoLaPerla from '@/assets/logo-la-perla.png'
+import logoLaPerla from '@/assets/logo_compras.jpg'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 

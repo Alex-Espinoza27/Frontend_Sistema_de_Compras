@@ -115,7 +115,7 @@ onUnmounted(() => {
         <v-container class="hero__interna">
           <div class="hero__texto">
             <h1 class="hero__titulo">Contrataciones públicas, a la vista de todos</h1>
-            <p class="hero__sub">
+            <p class="hero__sub mb-5">
               Consulte las contrataciones de bienes y servicios hasta 8 UIT de la Municipalidad
               Distrital de La Perla y de las demás entidades públicas registradas.
             </p>
