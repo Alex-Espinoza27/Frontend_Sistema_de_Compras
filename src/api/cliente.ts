@@ -1,4 +1,4 @@
-import axios, { type AxiosError } from 'axios'
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth.store'
@@ -15,8 +15,15 @@ const cliente = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}/api/v1`,
   withCredentials: true,
   withXSRFToken: true,
+  // Cookie propia del backend (ValidarCsrfCompras). `XSRF-TOKEN` la comparten
+  // todas las apps Laravel de este servidor (el navegador ignora el puerto) y
+  // se pisan entre sí: los POST empezaban a fallar con 419.
+  xsrfCookieName: 'XSRF-TOKEN-COMPRAS',
   headers: { Accept: 'application/json' },
 })
+
+/** Petición ya reintentada tras renovar el token CSRF (solo se reintenta una vez). */
+type ConfigReintentable = InternalAxiosRequestConfig & { _reintentoCsrf?: boolean }
 
 /** Llama `GET /sanctum/csrf-cookie` antes del primer POST de un flujo de auth
  * (login, registro...). Se llama siempre (no se cachea "para siempre"): el
@@ -47,6 +54,24 @@ cliente.interceptors.response.use(
       } catch {
         // No era JSON parseable: se deja el Blob tal cual.
       }
+    }
+
+    // 419 = el token CSRF no coincide (cookie renovada por otra pestaña, token
+    // viejo...). Si la sesión sigue viva, basta pedir un token nuevo y repetir la
+    // petición UNA vez; solo si vuelve a fallar se trata como sesión vencida.
+    const configuracion = error.config as ConfigReintentable | undefined
+    if (error.response?.status === 419 && configuracion && !configuracion._reintentoCsrf) {
+      configuracion._reintentoCsrf = true
+      let tokenRenovado = false
+      try {
+        await asegurarCsrf()
+        tokenRenovado = true
+      } catch {
+        // No se pudo renovar el token: sigue el tratamiento normal del 419.
+      }
+      // Si el reintento también falla, vuelve a pasar por este interceptor ya
+      // marcado como reintentado y recibe el tratamiento normal (401/419).
+      if (tokenRenovado) return cliente.request(configuracion)
     }
 
     const ui = useUiStore()
