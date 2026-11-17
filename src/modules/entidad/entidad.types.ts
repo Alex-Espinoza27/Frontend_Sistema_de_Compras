@@ -204,7 +204,7 @@ export interface OfertaEvaluacionItem {
   constancia_codigo: string
   proveedor: ProveedorRef
   total_general: string
-  tipo_comprobante: string
+  tipo_comprobante: string | null
   eval_tecnica: ResultadoEvaluacionCompuerta
   eval_logistica: ResultadoEvaluacionCompuerta
   estado: { codigo: string; color: string }

@@ -121,7 +121,7 @@ export interface OfertaDetalle {
   oferta_id: number
   convocatoria: { convocatoria_id: number; numero: string | null; nombre_servicio: string }
   estado: Estado
-  tipo_comprobante: { codigo: string; nombre: string }
+  tipo_comprobante: { codigo: string | null; nombre: string | null }
   total_general: string
   validez_dias: number
   plazo_ejecucion_segun_tdr: boolean

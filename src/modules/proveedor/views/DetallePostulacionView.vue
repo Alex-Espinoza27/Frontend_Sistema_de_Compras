@@ -70,7 +70,7 @@ function descargarArchivo(url: string, nombre: string) {
       <v-card class="pa-4 mb-4">
         <div class="text-subtitle-1 text-titulo mb-3">Condiciones</div>
         <v-row dense>
-          <v-col cols="12" sm="6">Comprobante: {{ oferta.tipo_comprobante.nombre }}</v-col>
+          <v-col cols="12" sm="6">Comprobante: {{ oferta.tipo_comprobante.nombre ?? 'No indicado' }}</v-col>
           <v-col cols="12" sm="6">Validez: {{ oferta.validez_dias }} días</v-col>
           <v-col cols="12" sm="6">
             Ejecución: {{ oferta.plazo_ejecucion_segun_tdr ? 'Según TDR' : `${oferta.plazo_ejecucion_dias} días` }}

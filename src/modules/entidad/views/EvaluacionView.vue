@@ -92,7 +92,7 @@ function abrirModal(ofertaId: number) {
                 <div class="text-caption text-grey">{{ oferta.proveedor.numero_documento }}</div>
               </td>
               <td>{{ oferta.total_general }}</td>
-              <td>{{ oferta.tipo_comprobante }}</td>
+              <td>{{ oferta.tipo_comprobante ?? '—' }}</td>
               <td><v-chip size="small" :color="colorCompuerta(oferta.eval_tecnica)" variant="tonal">{{ oferta.eval_tecnica ?? 'Pendiente' }}</v-chip></td>
               <td><v-chip size="small" :color="colorCompuerta(oferta.eval_logistica)" variant="tonal">{{ oferta.eval_logistica ?? 'Pendiente' }}</v-chip></td>
               <td><v-chip size="small" :color="oferta.estado.color" variant="tonal">{{ oferta.estado.codigo }}</v-chip></td>
