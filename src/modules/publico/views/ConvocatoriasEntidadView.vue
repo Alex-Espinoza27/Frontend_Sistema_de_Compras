@@ -449,7 +449,8 @@ onUnmounted(() => document.removeEventListener('visibilitychange', alReenfocar))
         <v-col cols="12" md="5">
           <v-text-field
             v-model="params.buscar"
-            placeholder="Buscar por código (ej: CONV-2026-001) o descripción del requerimiento..."
+            placeholder="Buscar por nombre, código de convocatoria o N.º de indagación"
+            autocomplete="off"
             prepend-inner-icon="mdi-magnify"
             clearable
             hide-details

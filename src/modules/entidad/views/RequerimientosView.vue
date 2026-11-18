@@ -123,9 +123,12 @@ async function confirmarCambioEstado() {
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por objeto o número"
+        label="Buscar"
+        placeholder="Objeto o N.º de requerimiento"
+        persistent-placeholder
+        autocomplete="off"
         prepend-inner-icon="mdi-magnify"
-        style="max-width: 280px"
+        style="max-width: 320px; min-width: 260px"
         clearable
       />
       <v-select

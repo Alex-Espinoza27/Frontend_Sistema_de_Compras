@@ -45,21 +45,80 @@ const opcionesEstado = [
 // que no es ordenable por clic.
 const leyenda = {
   proposito: "Convocatorias que publicó tu entidad para recibir ofertas, en cualquier estado.",
-  columnas: "Estado, N.º ofertas y Fechas programadas (inicio – fin para recibir ofertas).",
+  columnas:
+    "Número (con su requerimiento de origen), N.º de indagación (el del PDF de resultados), Fechas programadas " +
+    "(inicio – fin para recibir ofertas, con los días que faltan para el cierre), Estado y N.º ofertas.",
   fechas: "Por fecha de registro (cuándo se creó), días completos, a cualquier hora.",
 }
 
+// La columna "Urgencia" se reemplazó por el contador de días dentro de
+// "Fechas programadas" (pedido explícitamente por el usuario).
 const cabeceras = [
   { title: 'Acciones', key: 'acciones', sortable: false },
   { title: 'Número', key: 'numero' },
+  { title: 'N.º indagación', key: 'numero_indagacion', sortable: false },
   { title: 'Nombre', key: 'nombre_servicio', sortable: false },
   { title: 'Fecha de registro', key: 'fecha_registro' },
   { title: 'Fechas programadas', key: 'fechas', sortable: false },
   { title: 'Estado', key: 'estado' },
   { title: 'Motivo', key: 'motivo_cierre', sortable: false },
-  { title: 'Urgencia', key: 'urgencia_dias', sortable: false },
   { title: 'N.º ofertas', key: 'total_ofertas', sortable: false },
 ]
+
+function plural(n: number, singular: string, varios: string): string {
+  return `${n} ${n === 1 ? singular : varios}`
+}
+
+/**
+ * Contador hasta el cierre del plazo, solo para convocatorias vigentes
+ * (PUBLICADA): las demás ya no reciben ofertas o aún no se publicaron.
+ * `texto` va en el chip y `detalle` en el tooltip.
+ */
+function contadorCierre(item: ConvocatoriaListaItem): { texto: string; detalle: string; color: string; icono: string } | null {
+  if (item.estado.codigo !== 'PUBLICADA') return null
+  const ahora = dayjs()
+  const inicio = dayjs(item.fecha_inicio)
+  const fin = dayjs(item.fecha_fin)
+  const cierre = fin.tz().format('DD/MM/YYYY HH:mm')
+
+  if (inicio.isAfter(ahora)) {
+    const dias = Math.ceil(inicio.diff(ahora, 'hour', true) / 24)
+    return {
+      texto: `Inicia en ${dias} d`,
+      detalle: `Aún no empieza a recibir ofertas: faltan ${plural(dias, 'día', 'días')} para el inicio (${inicio.tz().format('DD/MM/YYYY HH:mm')}).`,
+      color: 'grey',
+      icono: 'mdi-calendar-clock',
+    }
+  }
+  if (!fin.isAfter(ahora)) {
+    const dias = ahora.diff(fin, 'day')
+    return {
+      texto: 'Vencida',
+      detalle:
+        `El plazo venció ${dias === 0 ? 'hoy' : `hace ${plural(dias, 'día', 'días')}`} (${cierre}). ` +
+        'Pasará a "En evaluación" automáticamente en unos minutos.',
+      color: 'error',
+      icono: 'mdi-timer-off-outline',
+    }
+  }
+  const horas = fin.diff(ahora, 'hour', true)
+  if (horas < 24) {
+    const h = Math.ceil(horas)
+    return {
+      texto: `${h} h`,
+      detalle: `Faltan menos de ${plural(h, 'hora', 'horas')} para que venza el plazo (cierra el ${cierre}).`,
+      color: 'error',
+      icono: 'mdi-timer-alert-outline',
+    }
+  }
+  const dias = Math.floor(horas / 24)
+  return {
+    texto: `${dias} d`,
+    detalle: `Faltan ${plural(dias, 'día', 'días')} para que venza el plazo (cierra el ${cierre}).`,
+    color: dias <= 3 ? 'warning' : 'success',
+    icono: 'mdi-timer-sand',
+  }
+}
 
 const cancelarAbierto = ref(false)
 const cancelarId = ref<number | null>(null)
@@ -102,9 +161,12 @@ async function confirmarCancelar(motivo: string | undefined) {
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por nombre o número"
+        label="Buscar"
+        placeholder="Nombre, código, N.º indagación o N.º requerimiento"
+        persistent-placeholder
+        autocomplete="off"
         prepend-inner-icon="mdi-magnify"
-        style="max-width: 280px"
+        style="max-width: 400px; min-width: 300px"
         clearable
       />
       <v-select
@@ -205,12 +267,39 @@ async function confirmarCancelar(motivo: string | undefined) {
           </v-btn>
         </div>
       </template>
-      <template #item.numero="{ item }">{{ item.numero ?? '— borrador' }}</template>
+      <template #item.numero="{ item }">
+        <div class="text-no-wrap">{{ item.numero ?? '— borrador' }}</div>
+        <div v-if="item.requerimiento_numero" class="text-caption text-medium-emphasis text-no-wrap">
+          <v-icon icon="mdi-file-document-outline" size="12" />
+          Req. {{ item.requerimiento_numero }}
+        </div>
+      </template>
+      <template #item.numero_indagacion="{ item }">
+        <span v-if="item.numero_indagacion" class="text-no-wrap">{{ item.numero_indagacion }}</span>
+        <span v-else class="text-medium-emphasis">—</span>
+      </template>
       <template #item.fecha_registro="{ item }">
         {{ dayjs(item.fecha_registro).tz().format('DD/MM/YYYY HH:mm') }}
       </template>
       <template #item.fechas="{ item }">
-        {{ dayjs(item.fecha_inicio).tz().format('DD/MM/YYYY') }} — {{ dayjs(item.fecha_fin).tz().format('DD/MM/YYYY') }}
+        <div class="d-flex align-center ga-2 text-no-wrap">
+          <span>{{ dayjs(item.fecha_inicio).tz().format('DD/MM/YYYY') }} — {{ dayjs(item.fecha_fin).tz().format('DD/MM/YYYY') }}</span>
+          <v-tooltip v-if="contadorCierre(item)" location="top" max-width="300">
+            <template #activator="{ props: tooltipProps }">
+              <v-chip
+                v-bind="tooltipProps"
+                :color="contadorCierre(item)!.color"
+                :prepend-icon="contadorCierre(item)!.icono"
+                variant="tonal"
+                size="x-small"
+                label
+              >
+                {{ contadorCierre(item)!.texto }}
+              </v-chip>
+            </template>
+            {{ contadorCierre(item)!.detalle }}
+          </v-tooltip>
+        </div>
       </template>
       <template #item.estado="{ item }"><BaseChipEstado :estado="item.estado" /></template>
       <template #item.motivo_cierre="{ item }">
@@ -222,10 +311,6 @@ async function confirmarCancelar(motivo: string | undefined) {
           </template>
           {{ item.motivo_cierre }}
         </v-tooltip>
-        <span v-else>—</span>
-      </template>
-      <template #item.urgencia_dias="{ item }">
-        <v-icon v-if="item.urgencia_dias <= 3 && item.estado.codigo === 'PUBLICADA'" icon="mdi-alert-circle-outline" color="accent" size="18" />
         <span v-else>—</span>
       </template>
     </BaseTablaServidor>

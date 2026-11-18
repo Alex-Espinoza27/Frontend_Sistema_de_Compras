@@ -52,9 +52,12 @@ const cabeceras = [
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por nombre o número"
+        label="Buscar"
+        placeholder="Nombre, código o N.º requerimiento"
+        persistent-placeholder
+        autocomplete="off"
         prepend-inner-icon="mdi-magnify"
-        style="max-width: 280px"
+        style="max-width: 340px; min-width: 280px"
         clearable
       />
       <BaseRangoFechas
@@ -89,6 +92,13 @@ const cabeceras = [
             <v-icon icon="mdi-gavel" />
             <v-tooltip activator="parent" location="top">Ir a Adjudicación</v-tooltip>
           </v-btn>
+        </div>
+      </template>
+      <template #item.numero="{ item }">
+        <div class="text-no-wrap">{{ item.numero }}</div>
+        <div v-if="item.requerimiento_numero" class="text-caption text-medium-emphasis text-no-wrap">
+          <v-icon icon="mdi-file-document-outline" size="12" />
+          Req. {{ item.requerimiento_numero }}
         </div>
       </template>
       <template #item.fecha_fin="{ item }">{{ dayjs(item.fecha_fin).tz().format('DD/MM/YYYY HH:mm') }}</template>

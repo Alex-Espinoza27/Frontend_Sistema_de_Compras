@@ -137,6 +137,8 @@ export interface ConvocatoriaListaItem {
   /** N.° del documento "Indagación de Mercado" — null si DESIERTA sin ofertas
    * (no se generó documento, 05C hardening). */
   numero_indagacion: string | null
+  /** N.° del requerimiento del que salió la convocatoria (aunque se haya borrado después). */
+  requerimiento_numero: string | null
 }
 
 /** `GET /convocatorias/{id}` (`ConvocatoriaController::show`, E4). */

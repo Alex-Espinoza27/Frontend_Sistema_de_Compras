@@ -66,9 +66,12 @@ function progreso(item: ConvocatoriaListaItem): { texto: string; color: string; 
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por nombre o número"
+        label="Buscar"
+        placeholder="Nombre, código o N.º requerimiento"
+        persistent-placeholder
+        autocomplete="off"
         prepend-inner-icon="mdi-magnify"
-        style="max-width: 280px"
+        style="max-width: 340px; min-width: 280px"
         clearable
       />
       <BaseRangoFechas
@@ -103,6 +106,13 @@ function progreso(item: ConvocatoriaListaItem): { texto: string; color: string; 
             <v-icon icon="mdi-clipboard-check-outline" />
             <v-tooltip activator="parent" location="top">Ir a Evaluación</v-tooltip>
           </v-btn>
+        </div>
+      </template>
+      <template #item.numero="{ item }">
+        <div class="text-no-wrap">{{ item.numero }}</div>
+        <div v-if="item.requerimiento_numero" class="text-caption text-medium-emphasis text-no-wrap">
+          <v-icon icon="mdi-file-document-outline" size="12" />
+          Req. {{ item.requerimiento_numero }}
         </div>
       </template>
       <template #item.estado="{ item }"><BaseChipEstado :estado="item.estado" /></template>

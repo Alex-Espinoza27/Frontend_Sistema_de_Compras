@@ -106,7 +106,10 @@ async function confirmarCambioEstado() {
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por razón social o RUC/DNI"
+        label="Buscar"
+        placeholder="Razón social o RUC/DNI"
+        persistent-placeholder
+        autocomplete="off"
         prepend-inner-icon="mdi-magnify"
         style="max-width: 320px"
         clearable

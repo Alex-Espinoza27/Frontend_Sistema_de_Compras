@@ -126,6 +126,7 @@ onUnmounted(() => {
             <v-text-field
               v-model="params.buscar"
               placeholder="Buscar entidad por razón social o sigla"
+              autocomplete="off"
               prepend-inner-icon="mdi-magnify"
               variant="solo-filled"
               flat

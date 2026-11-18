@@ -107,7 +107,10 @@ async function reactivar(id: number) {
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por razón social, RUC o sigla"
+        label="Buscar"
+        placeholder="Razón social, RUC o sigla"
+        persistent-placeholder
+        autocomplete="off"
         prepend-inner-icon="mdi-magnify"
         style="max-width: 320px"
         clearable

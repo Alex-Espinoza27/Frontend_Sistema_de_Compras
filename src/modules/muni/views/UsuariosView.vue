@@ -296,7 +296,10 @@ async function confirmarRestablecerPassword() {
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por DNI, nombre o correo"
+        label="Buscar"
+        placeholder="DNI, nombres, apellidos o correo"
+        persistent-placeholder
+        autocomplete="off"
         prepend-inner-icon="mdi-magnify"
         style="max-width: 320px"
         clearable

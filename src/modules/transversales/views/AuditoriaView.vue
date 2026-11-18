@@ -119,7 +119,10 @@ function exportar() {
     <div class="d-flex flex-wrap ga-4 mb-4">
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por endpoint o módulo"
+        label="Buscar"
+        placeholder="Endpoint o módulo"
+        persistent-placeholder
+        autocomplete="off"
         prepend-inner-icon="mdi-magnify"
         clearable
         style="max-width: 260px"

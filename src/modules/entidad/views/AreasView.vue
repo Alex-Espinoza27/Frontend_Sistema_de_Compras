@@ -159,7 +159,10 @@ async function alternarActivo(item: AreaItem) {
       />
       <v-text-field
         v-model="params.buscar"
-        label="Buscar por nombre"
+        label="Buscar"
+        placeholder="Nombre del área"
+        persistent-placeholder
+        autocomplete="off"
         prepend-inner-icon="mdi-magnify"
         style="max-width: 280px"
         clearable
