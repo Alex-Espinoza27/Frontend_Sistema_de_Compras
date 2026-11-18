@@ -201,15 +201,18 @@ const router = createRouter({
           component: () => import('@/modules/entidad/views/EvaluacionView.vue'),
         },
         {
+          // Se entra con adjudicacion.ver (la bandeja lleva aquí); los botones
+          // Adjudicar / Declarar desierta se muestran según su propio permiso.
           path: 'convocatorias/:id(\\d+)/adjudicacion',
           name: 'convocatorias-adjudicacion',
-          meta: { permiso: 'adjudicacion.adjudicar' },
+          meta: { permiso: 'adjudicacion.ver' },
           component: () => import('@/modules/entidad/views/AdjudicacionView.vue'),
         },
         {
           path: 'convocatorias/:id(\\d+)/resultados',
           name: 'convocatorias-resultados',
-          meta: { permiso: 'adjudicacion.ver' },
+          // También desde el listado de Convocatorias ("Ver resultados").
+          meta: { permiso: 'adjudicacion.ver|convocatorias.ver' },
           component: () => import('@/modules/entidad/views/ResultadosView.vue'),
         },
         {

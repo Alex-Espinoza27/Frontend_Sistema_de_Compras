@@ -91,7 +91,7 @@ async function confirmarCancelar(motivo: string | undefined) {
           <v-icon icon="mdi-refresh" />
           <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
         </v-btn>
-        <v-btn to="/app/convocatorias/nueva" color="primary" variant="flat" elevation="2" class="font-weight-medium px-5">
+        <v-btn v-can="'convocatorias.crear'" to="/app/convocatorias/nueva" color="primary" variant="flat" elevation="2" class="font-weight-medium px-5">
           Nueva convocatoria
         </v-btn>
       </div>

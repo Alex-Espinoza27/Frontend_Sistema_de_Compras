@@ -112,7 +112,7 @@ async function confirmarCambioEstado() {
           <v-icon icon="mdi-refresh" />
           <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
         </v-btn>
-        <v-btn to="/app/requerimientos/nuevo" color="primary" variant="flat" elevation="2" class="font-weight-medium px-5">
+        <v-btn v-can="'requerimientos.crear'" to="/app/requerimientos/nuevo" color="primary" variant="flat" elevation="2" class="font-weight-medium px-5">
           Nuevo requerimiento
         </v-btn>
       </div>
@@ -201,6 +201,7 @@ async function confirmarCambioEstado() {
       <template #item.acciones="{ item }">
         <div class="d-flex align-center ga-1">
           <v-btn
+            v-can="'requerimientos.editar'"
             :to="`/app/requerimientos/${item.requerimiento_id}`"
             icon
             variant="text"
@@ -211,6 +212,7 @@ async function confirmarCambioEstado() {
             <v-tooltip activator="parent" location="top">Editar requerimiento</v-tooltip>
           </v-btn>
           <v-btn
+            v-can="'requerimientos.eliminar'"
             icon
             variant="text"
             size="small"

@@ -278,7 +278,14 @@ async function confirmarRestablecerPassword() {
           <v-icon icon="mdi-refresh" />
           <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
         </v-btn>
-        <v-btn color="primary" variant="flat" elevation="2" class="font-weight-medium px-5" @click="abrirNuevo">
+        <v-btn
+          v-can="'gestion_usuarios.gestionar'"
+          color="primary"
+          variant="flat"
+          elevation="2"
+          class="font-weight-medium px-5"
+          @click="abrirNuevo"
+        >
           Nuevo usuario
         </v-btn>
       </div>
@@ -316,7 +323,7 @@ async function confirmarRestablecerPassword() {
       mensaje-vacio="No hay usuarios registrados."
     >
       <template #item.acciones="{ item }">
-        <div class="d-flex align-center ga-1">
+        <div v-can="'gestion_usuarios.gestionar'" class="d-flex align-center ga-1">
           <v-btn
             icon
             variant="text"

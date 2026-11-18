@@ -125,6 +125,7 @@ async function alternarActivo(item: AreaItem) {
           <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
         </v-btn>
         <v-btn
+          v-can="'areas.gestionar'"
           color="primary"
           variant="flat"
           elevation="2"
@@ -183,6 +184,7 @@ async function alternarActivo(item: AreaItem) {
       <template #item.acciones="{ item }">
         <div class="d-flex align-center ga-1">
           <v-btn
+            v-can="'areas.gestionar'"
             icon
             variant="text"
             size="small"
@@ -201,6 +203,7 @@ async function alternarActivo(item: AreaItem) {
           color="primary"
           density="compact"
           hide-details
+          :readonly="!auth.puede('areas.gestionar')"
           @update:model-value="alternarActivo(item)"
         />
       </template>

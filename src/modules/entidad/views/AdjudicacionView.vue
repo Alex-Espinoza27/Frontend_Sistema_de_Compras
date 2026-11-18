@@ -132,10 +132,18 @@ async function confirmarDesierta(motivo: string | undefined) {
       </v-alert>
 
       <div class="d-flex justify-end ga-2">
-        <v-btn variant="tonal" color="error" :disabled="hayAprobadas" @click="desiertaAbierto = true">
+        <v-btn
+          v-can="'adjudicacion.declarar_desierta'"
+          variant="tonal"
+          color="error"
+          :disabled="hayAprobadas"
+          @click="desiertaAbierto = true"
+        >
           Declarar desierta
         </v-btn>
-        <v-btn color="primary" :disabled="!hayAprobadas" @click="adjudicarAbierto = true">Adjudicar</v-btn>
+        <v-btn v-can="'adjudicacion.adjudicar'" color="primary" :disabled="!hayAprobadas" @click="adjudicarAbierto = true">
+          Adjudicar
+        </v-btn>
       </div>
     </template>
 

@@ -88,7 +88,14 @@ async function confirmarCambioEstado() {
           <v-icon icon="mdi-refresh" />
           <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
         </v-btn>
-        <v-btn color="primary" variant="flat" elevation="2" class="font-weight-medium px-5" @click="abrirNuevo">
+        <v-btn
+          v-can="'gestion_proveedores.gestionar'"
+          color="primary"
+          variant="flat"
+          elevation="2"
+          class="font-weight-medium px-5"
+          @click="abrirNuevo"
+        >
           Nuevo proveedor
         </v-btn>
       </div>
@@ -129,7 +136,7 @@ async function confirmarCambioEstado() {
       mensaje-vacio="No hay proveedores registrados."
     >
       <template #item.acciones="{ item }">
-        <div class="d-flex align-center ga-1">
+        <div v-can="'gestion_proveedores.gestionar'" class="d-flex align-center ga-1">
           <v-btn icon variant="text" size="small" color="primary" @click="abrirEditar(item.proveedor_id)">
             <v-icon icon="mdi-pencil-outline" />
             <v-tooltip activator="parent" location="top">Editar proveedor</v-tooltip>

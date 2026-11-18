@@ -45,7 +45,9 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     autenticado: (estado) => estado.usuario !== null,
-    puede: (estado) => (permiso: string) => estado.permisos.includes(permiso),
+    /** Acepta varios permisos separados por `|` (basta con tener uno), igual
+     * que `meta.permiso` del router y el middleware `permission:a|b`. */
+    puede: (estado) => (permiso: string) => permiso.split('|').some((p) => estado.permisos.includes(p)),
     /** Trabaja solo con los datos de su entidad: rol ENTIDAD o rol personalizado
      * con entidad asignada (el backend lo indica con perfil.tipo = 'ENTIDAD').
      * Si es false ve todas las entidades y las pantallas le piden elegir una. */

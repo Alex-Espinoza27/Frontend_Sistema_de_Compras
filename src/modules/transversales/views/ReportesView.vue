@@ -321,6 +321,7 @@ function filtrosActuales() {
           <v-tooltip activator="parent" location="bottom">Refrescar</v-tooltip>
         </v-btn>
         <v-btn
+          v-can="'reportes.exportar'"
           variant="tonal"
           prepend-icon="mdi-file-excel-outline"
           :loading="exportando"
@@ -330,6 +331,7 @@ function filtrosActuales() {
           Excel
         </v-btn>
         <v-btn
+          v-can="'reportes.exportar'"
           variant="tonal"
           prepend-icon="mdi-file-pdf-box"
           :loading="exportando"
