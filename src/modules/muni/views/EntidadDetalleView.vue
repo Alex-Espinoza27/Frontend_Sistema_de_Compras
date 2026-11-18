@@ -40,12 +40,12 @@ async function confirmarAprobar() {
   aprobando.value = true
   erroresAprobar.value = {}
   try {
-    await entidadesApi.aprobar(entidadId, {
+    const { correo_enviado } = await entidadesApi.aprobar(entidadId, {
       usuario_inicial:
         detalle.value?.usuarios.length === 0 ? { nombre: aprobarForm.nombre, correo: aprobarForm.correo } : undefined,
     })
     aprobarAbierto.value = false
-    ui.mostrarSnackbar('Entidad aprobada. Se enviaron las credenciales por correo.', 'success')
+    ui.mostrarResultadoAlta('Entidad aprobada', correo_enviado, 'Se enviaron las credenciales por correo.')
     await cargar()
   } catch (e: unknown) {
     const error = e as ErrorApi
@@ -116,8 +116,8 @@ async function guardarUsuario() {
       await entidadesApi.actualizarUsuario(entidadId, usuarioEditando.value.id, { ...usuarioForm })
       ui.mostrarSnackbar('Usuario actualizado.', 'success')
     } else {
-      await entidadesApi.crearUsuario(entidadId, { ...usuarioForm })
-      ui.mostrarSnackbar('Usuario creado. Se enviaron las credenciales por correo.', 'success')
+      const { correo_enviado } = await entidadesApi.crearUsuario(entidadId, { ...usuarioForm })
+      ui.mostrarResultadoAlta('Usuario creado', correo_enviado, 'Se enviaron las credenciales por correo.')
     }
     usuarioAbierto.value = false
     await cargar()

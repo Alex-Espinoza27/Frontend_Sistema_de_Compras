@@ -105,8 +105,8 @@ async function guardar() {
       await adminApi.actualizarProveedor(props.proveedorId, { ...form })
       ui.mostrarSnackbar('Proveedor actualizado.', 'success')
     } else {
-      await adminApi.crearProveedor({ ...form })
-      ui.mostrarSnackbar('Proveedor creado. Se envió un correo para que configure su contraseña.', 'success')
+      const { correo_enviado } = await adminApi.crearProveedor({ ...form })
+      ui.mostrarResultadoAlta('Proveedor creado', correo_enviado, 'Se envió un correo para que configure su contraseña.')
     }
     abierto.value = false
     emit('guardado')

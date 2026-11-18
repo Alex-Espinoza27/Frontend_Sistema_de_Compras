@@ -28,7 +28,8 @@ export const adminApi = {
   usuarios: (params: ListadoParams) =>
     cliente.get<never, Paginado<UsuarioPlataformaItem>>('/admin/usuarios-plataforma', { params }),
   crearUsuario: (body: UsuarioPlataformaInput) =>
-    cliente.post<never, { id: number }>('/admin/usuarios-plataforma', body),
+    // `correo_enviado: false`: el usuario se creó pero el correo con el enlace falló.
+    cliente.post<never, { id: number; correo_enviado: boolean }>('/admin/usuarios-plataforma', body),
   actualizarUsuario: (id: number, body: UsuarioPlataformaInput) =>
     cliente.put<never, null>(`/admin/usuarios-plataforma/${id}`, body),
   desactivarUsuario: (id: number) => cliente.post<never, null>(`/admin/usuarios-plataforma/${id}/desactivar`),
@@ -41,7 +42,7 @@ export const adminApi = {
     cliente.get<never, Paginado<ProveedorAdminItem>>('/admin/proveedores', { params }),
   proveedorDetalle: (id: number) => cliente.get<never, ProveedorAdminDetalle>(`/admin/proveedores/${id}`),
   crearProveedor: (body: ProveedorAdminInput) =>
-    cliente.post<never, { proveedor_id: number }>('/admin/proveedores', body),
+    cliente.post<never, { proveedor_id: number; correo_enviado: boolean }>('/admin/proveedores', body),
   actualizarProveedor: (id: number, body: ProveedorAdminInput) =>
     cliente.put<never, null>(`/admin/proveedores/${id}`, body),
   reactivarProveedor: (id: number) => cliente.post<never, null>(`/admin/proveedores/${id}/reactivar`),

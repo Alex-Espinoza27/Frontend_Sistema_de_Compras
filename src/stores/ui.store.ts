@@ -51,6 +51,19 @@ export const useUiStore = defineStore('ui', {
     mostrarSnackbar(texto: string, color: ColorSnackbar = 'info') {
       this.snackbar = { visible: true, texto, color }
     },
+    /** Resultado de un alta que envía el enlace para definir la contraseña.
+     * El registro ya quedó guardado; si el correo falló (`correo_enviado:
+     * false`) se avisa, sin tratarlo como error. */
+    mostrarResultadoAlta(registro: string, correoEnviado: boolean | undefined, detalleCorreo: string) {
+      if (correoEnviado === false) {
+        this.mostrarSnackbar(
+          `${registro}, pero no se pudo enviar el correo. Revise la configuración de correo y reenvíe el enlace con "Restablecer contraseña".`,
+          'warning',
+        )
+      } else {
+        this.mostrarSnackbar(`${registro}. ${detalleCorreo}`, 'success')
+      }
+    },
     cerrarSnackbar() {
       this.snackbar.visible = false
     },

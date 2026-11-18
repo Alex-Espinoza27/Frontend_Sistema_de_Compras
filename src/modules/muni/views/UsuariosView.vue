@@ -167,8 +167,8 @@ async function guardar() {
       await adminApi.actualizarUsuario(editando.value.id, { ...form })
       ui.mostrarSnackbar('Usuario actualizado.', 'success')
     } else {
-      await adminApi.crearUsuario({ ...form })
-      ui.mostrarSnackbar('Usuario creado. Se envió un correo para que defina su contraseña.', 'success')
+      const { correo_enviado } = await adminApi.crearUsuario({ ...form })
+      ui.mostrarResultadoAlta('Usuario creado', correo_enviado, 'Se envió un correo para que defina su contraseña.')
     }
     abierto.value = false
     recargar()

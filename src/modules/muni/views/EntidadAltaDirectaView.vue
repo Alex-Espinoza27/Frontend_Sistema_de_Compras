@@ -35,7 +35,7 @@ async function guardar() {
   erroresCampo.value = {}
   guardando.value = true
   try {
-    const { entidad_id } = await entidadesApi.store({
+    const { entidad_id, correo_enviado } = await entidadesApi.store({
       numero_documento: form.numero_documento,
       razon_social: form.razon_social,
       sigla: form.sigla,
@@ -45,7 +45,7 @@ async function guardar() {
       persona_contacto: form.persona_contacto,
       usuario_inicial: { nombre: form.usuario_nombre, correo: form.usuario_correo },
     })
-    ui.mostrarSnackbar('Entidad registrada y aprobada. Se enviaron las credenciales por correo.', 'success')
+    ui.mostrarResultadoAlta('Entidad registrada y aprobada', correo_enviado, 'Se enviaron las credenciales por correo.')
     router.push(`/app/entidades/${entidad_id}`)
   } catch (e: unknown) {
     const error = e as ErrorApi

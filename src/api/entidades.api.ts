@@ -27,9 +27,12 @@ export const entidadesApi = {
 
   show: (id: number) => cliente.get<never, EntidadDetalle>(`/entidades/${id}`),
 
-  store: (body: AltaDirectaInput) => cliente.post<never, { entidad_id: number }>('/entidades', body),
+  // `correo_enviado: false`: el alta se guardó pero el correo con el enlace falló.
+  store: (body: AltaDirectaInput) =>
+    cliente.post<never, { entidad_id: number; correo_enviado: boolean }>('/entidades', body),
 
-  aprobar: (id: number, body: AprobarEntidadInput) => cliente.post<never, null>(`/entidades/${id}/aprobar`, body),
+  aprobar: (id: number, body: AprobarEntidadInput) =>
+    cliente.post<never, { correo_enviado: boolean }>(`/entidades/${id}/aprobar`, body),
 
   observar: (id: number, motivo: string) => cliente.post<never, null>(`/entidades/${id}/observar`, { motivo }),
 
@@ -42,7 +45,7 @@ export const entidadesApi = {
   usuarios: (id: number) => cliente.get<never, UsuarioEntidad[]>(`/entidades/${id}/usuarios`),
 
   crearUsuario: (id: number, body: UsuarioEntidadInput) =>
-    cliente.post<never, { id: number }>(`/entidades/${id}/usuarios`, body),
+    cliente.post<never, { id: number; correo_enviado: boolean }>(`/entidades/${id}/usuarios`, body),
 
   actualizarUsuario: (id: number, userId: number, body: UsuarioEntidadInput) =>
     cliente.put<never, null>(`/entidades/${id}/usuarios/${userId}`, body),
