@@ -23,7 +23,7 @@ const { items, paginacion, cargando, params, recargar } = useListado<Presentacio
 
 const leyenda = {
   proposito: "Ofertas que enviaron los proveedores a tus convocatorias, en cualquier estado.",
-  columnas: "Constancia, Proveedor, Total y Estado de la oferta.",
+  columnas: "Constancia, Proveedor (con su RUC/DNI), Total y Estado de la oferta.",
   fechas: "Por fecha de envío de la oferta, días completos, a cualquier hora.",
 }
 
@@ -55,7 +55,7 @@ const cabeceras = [
       <v-text-field
         v-model="params.buscar"
         label="Buscar"
-        placeholder="Nombre o código de la convocatoria"
+        placeholder="Nombre o código de la convocatoria, proveedor o RUC/DNI"
         persistent-placeholder
         autocomplete="off"
         prepend-inner-icon="mdi-magnify"
@@ -129,7 +129,12 @@ const cabeceras = [
         </div>
       </template>
       <template #item.convocatoria="{ item }">{{ item.convocatoria.numero ?? '—' }} — {{ item.convocatoria.nombre_servicio }}</template>
-      <template #item.proveedor="{ item }">{{ item.proveedor.razon_social }}</template>
+      <template #item.proveedor="{ item }">
+        <div class="text-no-wrap">{{ item.proveedor.razon_social }}</div>
+        <v-chip size="x-small" variant="tonal" color="grey" class="mt-1">
+          {{ item.proveedor.tipo_documento }}: {{ item.proveedor.numero_documento }}
+        </v-chip>
+      </template>
       <template #item.estado="{ item }">
         <BaseChipEstado :estado="{ codigo: item.estado.codigo, nombre: item.estado.nombre, color: item.estado.color }" />
       </template>

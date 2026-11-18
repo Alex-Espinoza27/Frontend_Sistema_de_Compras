@@ -312,7 +312,7 @@ export interface PresentacionOfertaItem {
   oferta_id: number
   constancia_codigo: string
   convocatoria: { convocatoria_id: number; numero: string | null; nombre_servicio: string }
-  proveedor: ProveedorRef
+  proveedor: ProveedorRef & { tipo_documento: string }
   total_general: string
   estado: { codigo: string; nombre: string; color: string }
   fecha_envio: string

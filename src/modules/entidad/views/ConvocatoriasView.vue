@@ -61,7 +61,9 @@ const cabeceras = [
   { title: 'Fecha de registro', key: 'fecha_registro' },
   { title: 'Fechas programadas', key: 'fechas', sortable: false },
   { title: 'Estado', key: 'estado' },
-  { title: 'Motivo', key: 'motivo_cierre', sortable: false },
+  // Columna "Motivo" oculta a pedido del usuario: sin la cabecera, el slot
+  // `#item.motivo_cierre` de abajo queda sin uso (no se borra).
+  // { title: 'Motivo', key: 'motivo_cierre', sortable: false },
   { title: 'N.º ofertas', key: 'total_ofertas', sortable: false },
 ]
 
