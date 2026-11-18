@@ -18,7 +18,7 @@ import { computed, reactive, ref, watch } from 'vue'
 
 import { adminApi } from '@/api/admin.api'
 import { areasApi } from '@/api/areas.api'
-import { entidadesApi } from '@/api/entidades.api'
+import { entidadesApi, entidadPorDefecto } from '@/api/entidades.api'
 import { publicoApi } from '@/api/publico.api'
 import { reportesApi } from '@/api/reportes.api'
 import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
@@ -26,14 +26,16 @@ import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import { useDescarga } from '@/composables/useDescarga'
 import type { AreaItem } from '@/modules/entidad/entidad.types'
-import type { EntidadListaItem, ProveedorAdminItem, TipoComprobanteAdmin } from '@/modules/muni/muni.types'
+import type { EntidadCombo, ProveedorAdminItem, TipoComprobanteAdmin } from '@/modules/muni/muni.types'
 import type { RubroPublico } from '@/modules/publico/publico.types'
 import type { ReporteFila, TipoReporte } from '@/modules/transversales/transversales.types'
 import { useAuthStore } from '@/stores/auth.store'
 
 const auth = useAuthStore()
-const esAdmin = auth.usuario?.rol === 'ADMINISTRADOR'
-const esEntidad = auth.usuario?.rol === 'ENTIDAD'
+// Ve todas las entidades quien no está limitado a la suya (ADMINISTRADOR,
+// AUDITOR o un rol personalizado sin entidad asignada): elige una en el combo.
+const esAdmin = !auth.limitadoAEntidad
+const esEntidad = auth.limitadoAEntidad
 const entidadAsignada = computed(() => (auth.perfil?.tipo === 'ENTIDAD' ? auth.perfil.entidad : null))
 
 const opcionesTipo: { title: string; value: TipoReporte }[] = [
@@ -175,14 +177,11 @@ const filtros = reactive({
 const pagina = ref(1)
 const porPagina = ref(15)
 
-const entidades = ref<EntidadListaItem[]>([])
+const entidades = ref<EntidadCombo[]>([])
 const proveedores = ref<ProveedorAdminItem[]>([])
 const rubros = ref<RubroPublico[]>([])
 const tiposComprobante = ref<TipoComprobanteAdmin[]>([])
 const areas = ref<AreaItem[]>([])
-if (esAdmin) {
-  entidadesApi.index({ ordenar_por: 'razon_social', por_pagina: 100 }).then((data) => (entidades.value = data.items))
-}
 adminApi.proveedores({ por_pagina: 100 }).then((data) => (proveedores.value = data.items))
 publicoApi.rubros().then((data) => (rubros.value = data.items))
 adminApi.tiposComprobante().then((data) => (tiposComprobante.value = data))
@@ -202,7 +201,6 @@ async function cargarAreas() {
   areas.value = data.items
 }
 watch(() => filtros.entidad_id, cargarAreas)
-cargarAreas()
 
 const rubrosFiltrados = computed(() =>
   filtros.tipo_requerimiento ? rubros.value.filter((r) => r.tipo === filtros.tipo_requerimiento) : rubros.value,
@@ -264,7 +262,22 @@ async function buscar() {
     cargando.value = false
   }
 }
-buscar()
+
+// Quien ve todas las entidades arranca con la primera del combo
+// preseleccionada y consulta con ella (puede limpiarlo para ver todas).
+async function iniciar() {
+  if (esAdmin) {
+    try {
+      entidades.value = await entidadesApi.combo()
+      filtros.entidad_id = entidadPorDefecto(entidades.value)
+    } catch {
+      // Sin combo igual se consulta sin filtro de entidad.
+    }
+  }
+  if (!filtros.entidad_id) cargarAreas() // con entidad lo dispara el watch
+  buscar()
+}
+iniciar()
 
 watch(
   () => [filtros.ordenar_por, filtros.direccion],

@@ -23,17 +23,19 @@ import { Bar, Doughnut, Line } from 'vue-chartjs'
 import { useTheme } from 'vuetify'
 
 import { dashboardApi } from '@/api/dashboard.api'
-import { entidadesApi } from '@/api/entidades.api'
+import { entidadesApi, entidadPorDefecto } from '@/api/entidades.api'
 import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import type { DashboardDatos } from '@/modules/transversales/transversales.types'
-import type { EntidadListaItem } from '@/modules/muni/muni.types'
+import type { EntidadCombo } from '@/modules/muni/muni.types'
 import { useAuthStore } from '@/stores/auth.store'
 
 ChartJS.register(BarElement, ArcElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler)
 
 const theme = useTheme()
 const auth = useAuthStore()
-const esAdmin = computed(() => auth.usuario?.rol === 'ADMINISTRADOR')
+// Ve todas las entidades quien no está limitado a la suya (ADMINISTRADOR,
+// AUDITOR o un rol personalizado sin entidad asignada): elige una en el combo.
+const esAdmin = computed(() => !auth.limitadoAEntidad)
 const entidadAsignada = computed(() => (auth.perfil?.tipo === 'ENTIDAD' ? auth.perfil.entidad : null))
 
 // Solo el ADMINISTRADOR puede seleccionar o cambiar entre entidades (o ver consolidado general).
@@ -45,10 +47,7 @@ const filtros = reactive({
   entidad_id: entidadIdPorDefecto as number | null,
 })
 
-const entidades = ref<EntidadListaItem[]>([])
-if (esAdmin.value) {
-  entidadesApi.index({ ordenar_por: 'razon_social', por_pagina: 100 }).then((data) => (entidades.value = data.items))
-}
+const entidades = ref<EntidadCombo[]>([])
 
 const datos = ref<DashboardDatos | null>(null)
 const cargando = ref(true)
@@ -68,7 +67,21 @@ async function cargar() {
     cargando.value = false
   }
 }
-cargar()
+
+// Quien ve todas las entidades arranca con la primera del combo
+// preseleccionada (y consulta con ella); puede limpiarlo para ver el general.
+async function iniciar() {
+  if (esAdmin.value) {
+    try {
+      entidades.value = await entidadesApi.combo()
+      filtros.entidad_id = entidadPorDefecto(entidades.value)
+    } catch {
+      // Sin combo igual se carga el general.
+    }
+  }
+  await cargar()
+}
+iniciar()
 
 function alReenfocar() {
   if (document.visibilityState === 'visible') cargar()

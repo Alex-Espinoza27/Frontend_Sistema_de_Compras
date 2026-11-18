@@ -9,7 +9,8 @@ import { computed } from 'vue'
 
 import type { PermisoItem } from '@/modules/muni/muni.types'
 
-const props = defineProps<{ permisos: PermisoItem[] }>()
+// `soloLectura`: muestra los permisos sin poder cambiarlos (rol PROVEEDOR).
+const props = defineProps<{ permisos: PermisoItem[]; soloLectura?: boolean }>()
 const seleccionados = defineModel<string[]>({ required: true })
 
 // Orden fijo de módulos (mismo criterio que ya usaba `RolesPermisosView.vue`):
@@ -50,22 +51,63 @@ const gruposOrdenados = computed(() => {
     return posA - posB
   })
 })
+
+// "Seleccionar todo" por grupo: marca o desmarca de un solo click todos los
+// permisos de ese módulo. El checkbox refleja si están todos marcados,
+// ninguno o algunos (indeterminado) sin un v-model propio por grupo.
+function estaTodoMarcado(permisosModulo: PermisoItem[]): boolean {
+  return permisosModulo.every((p) => seleccionados.value.includes(p.permiso))
+}
+function estaAlgunoMarcado(permisosModulo: PermisoItem[]): boolean {
+  return permisosModulo.some((p) => seleccionados.value.includes(p.permiso))
+}
+function alternarGrupo(permisosModulo: PermisoItem[]) {
+  const nombres = permisosModulo.map((p) => p.permiso)
+  if (estaTodoMarcado(permisosModulo)) {
+    seleccionados.value = seleccionados.value.filter((p) => !nombres.includes(p))
+  } else {
+    seleccionados.value = [...new Set([...seleccionados.value, ...nombres])]
+  }
+}
 </script>
 
 <template>
   <v-row>
     <v-col v-for="[modulo, permisosModulo] in gruposOrdenados" :key="modulo" cols="12" sm="6" md="4">
       <v-card class="pa-3" variant="tonal">
-        <div class="text-subtitle-2 mb-2">{{ permisosModulo[0].modulo_nombre }}</div>
+        <div class="d-flex align-center justify-space-between mb-1">
+          <div class="text-subtitle-2">{{ permisosModulo[0].modulo_nombre }}</div>
+          <v-chip size="x-small" variant="tonal" color="primary">
+            {{ permisosModulo.filter((p) => seleccionados.includes(p.permiso)).length }}/{{ permisosModulo.length }}
+          </v-chip>
+        </div>
+        <v-checkbox
+          v-if="!props.soloLectura"
+          :model-value="estaTodoMarcado(permisosModulo)"
+          :indeterminate="!estaTodoMarcado(permisosModulo) && estaAlgunoMarcado(permisosModulo)"
+          label="Seleccionar todo"
+          density="compact"
+          hide-details
+          class="font-weight-medium"
+          @update:model-value="alternarGrupo(permisosModulo)"
+        />
+        <v-divider v-if="!props.soloLectura" class="my-2" />
         <v-checkbox
           v-for="p in permisosModulo"
           :key="p.permiso"
           v-model="seleccionados"
-          :label="p.permiso"
           :value="p.permiso"
           density="compact"
           hide-details
-        />
+          :readonly="props.soloLectura"
+        >
+          <template #label>
+            <div>
+              <div>{{ p.nombre }}</div>
+              <div v-if="p.descripcion" class="text-caption text-grey">{{ p.descripcion }}</div>
+            </div>
+          </template>
+        </v-checkbox>
       </v-card>
     </v-col>
   </v-row>

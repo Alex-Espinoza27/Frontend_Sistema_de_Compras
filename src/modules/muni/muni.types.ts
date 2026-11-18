@@ -3,6 +3,14 @@ import type { Estado } from '@/types/api'
 export type EstadoEntidadCodigo = 'SOLICITADA' | 'APROBADA' | 'OBSERVADA' | 'RECHAZADA' | 'SUSPENDIDA'
 
 /** Ítem de `GET /entidades` (`EntidadController::index`, H1). */
+/** Fila de `GET /entidades/combo`: para los selectores de entidad (no exige el módulo Entidades). */
+export interface EntidadCombo {
+  entidad_id: number
+  razon_social: string
+  sigla: string | null
+  estado: string | null
+}
+
 export interface EntidadListaItem {
   entidad_id: number
   numero_documento: string
@@ -149,7 +157,7 @@ export interface UsuarioPlataformaItem {
 }
 
 /** Cuerpo de `POST`/`PUT /admin/usuarios-plataforma` (`UsuarioPlataformaStoreRequest`/`UpdateRequest`).
- * `entidad_id` solo aplica (y es obligatorio) si `rol === 'ENTIDAD'`. `tipo_documento`,
+ * `entidad_id`: obligatorio con rol ENTIDAD, opcional con un rol personalizado y nulo con ADMINISTRADOR/AUDITOR. `tipo_documento`,
  * `celular` y `fecha_nacimiento` son opcionales (05C hardening, pedido explícitamente
  * por el usuario); si no se envía `tipo_documento` el backend asume DNI. */
 export interface UsuarioPlataformaInput {
@@ -175,6 +183,8 @@ export interface RolConPermisos {
   permisos_count: number
   usuarios_count: number
   es_reservado: boolean
+  /** Rol reservado con permisos fijos (PROVEEDOR): se muestran sin editar. */
+  permisos_fijos: boolean
   /** Desactivar en vez de eliminar (05C hardening, pedido explícitamente por
    * el usuario): un rol inactivo deja de ofrecerse para asignaciones nuevas,
    * sin afectar a quienes ya lo tienen. */
@@ -183,9 +193,14 @@ export interface RolConPermisos {
 
 export interface PermisoItem {
   permiso: string
+  /** Nombre legible del permiso, ej. "Ver mi ficha de proveedor". */
+  nombre: string
+  descripcion: string
   modulo: string
   /** Nombre amigable del módulo (05C hardening), ej. "Proveedores" en vez de "GESTION_PROVEEDORES". */
   modulo_nombre: string
+  /** Solo sirve al rol PROVEEDOR (su ficha y sus ofertas): se ofrece únicamente al editar ese rol. */
+  solo_proveedor: boolean
 }
 
 // --- I4 · Configuración y UIT --------------------------------------------------------

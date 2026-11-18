@@ -123,6 +123,11 @@ watch(
   },
 )
 
+watch(
+  () => form.nombre_servicio,
+  () => limpiarErrores('nombre_servicio'),
+)
+
 const reglasFechaFin = computed(() => {
   if (!esBorrador.value) return []
   return [

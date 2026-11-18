@@ -12,7 +12,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { areasApi } from '@/api/areas.api'
-import { entidadesApi } from '@/api/entidades.api'
+import { entidadesApi, entidadPorDefecto } from '@/api/entidades.api'
 import { publicoApi } from '@/api/publico.api'
 import { requerimientosApi } from '@/api/requerimientos.api'
 import BaseArchivoUpload from '@/components/base/BaseArchivoUpload.vue'
@@ -24,7 +24,7 @@ import type {
   TipoRequerimiento,
   UnidadMedidaCombo,
 } from '@/modules/entidad/entidad.types'
-import type { EntidadListaItem } from '@/modules/muni/muni.types'
+import type { EntidadCombo } from '@/modules/muni/muni.types'
 import type { RubroPublico } from '@/modules/publico/publico.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
@@ -59,14 +59,16 @@ const id = route.params.id ? Number(route.params.id) : null
 const esEdicion = id !== null
 // 05C hardening: ADMINISTRADOR no tiene entidad propia — crea/ve
 // requerimientos "en nombre de" la entidad que elija explícitamente.
-const esEntidad = computed(() => auth.usuario?.rol === 'ENTIDAD')
-const esAdmin = computed(() => auth.usuario?.rol === 'ADMINISTRADOR')
+// Limitado a su entidad (rol ENTIDAD o rol personalizado con entidad): crea
+// en la suya. Si ve todas (ADMINISTRADOR, rol personalizado sin entidad) elige.
+const esEntidad = computed(() => auth.limitadoAEntidad)
+const esAdmin = computed(() => !auth.limitadoAEntidad)
 
 const cargando = ref(true)
 const rubros = ref<RubroPublico[]>([])
 const unidades = ref<UnidadMedidaCombo[]>([])
 const areas = ref<AreaItem[]>([])
-const entidadesAprobadas = ref<EntidadListaItem[]>([])
+const entidadesAprobadas = ref<EntidadCombo[]>([])
 const numeroGenerado = ref('')
 const archivoTdr = ref<{ archivo_id: number; nombre: string } | null>(null)
 
@@ -121,7 +123,9 @@ async function cargar() {
   unidades.value = unidadesData
 
   if (!esEntidad.value) {
-    entidadesAprobadas.value = (await entidadesApi.index({ estado: 'APROBADA', ordenar_por: 'razon_social', por_pagina: 100 })).items
+    entidadesAprobadas.value = await entidadesApi.combo({ estado: 'APROBADA' })
+    // Al crear se preselecciona la primera (el watch carga sus áreas).
+    if (!id) form.entidad_id = entidadPorDefecto(entidadesAprobadas.value)
   }
 
   if (id) {

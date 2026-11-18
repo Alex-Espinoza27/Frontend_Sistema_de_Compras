@@ -192,7 +192,7 @@ onUnmounted(() => {
       <section class="accesos">
         <v-container>
           <v-row>
-            <v-col cols="12" md="6">
+            <v-col cols="12">
               <router-link to="/registro" class="acceso">
                 <v-icon icon="mdi-account-plus-outline" size="28" class="acceso__icono" />
                 <div>
@@ -202,6 +202,7 @@ onUnmounted(() => {
                 <v-icon icon="mdi-chevron-right" class="ml-auto" />
               </router-link>
             </v-col>
+            <!-- Solicitud pública de alta de entidad: DESACTIVADA (ver router/index.ts).
             <v-col cols="12" md="6">
               <router-link to="/solicitud-entidad" class="acceso">
                 <v-icon icon="mdi-domain-plus" size="28" class="acceso__icono" />
@@ -212,6 +213,7 @@ onUnmounted(() => {
                 <v-icon icon="mdi-chevron-right" class="ml-auto" />
               </router-link>
             </v-col>
+            -->
           </v-row>
         </v-container>
       </section>

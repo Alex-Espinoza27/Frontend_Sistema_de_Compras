@@ -6,12 +6,12 @@
 import { computed, reactive, ref } from 'vue'
 
 import { areasApi } from '@/api/areas.api'
-import { entidadesApi } from '@/api/entidades.api'
+import { entidadesApi, entidadPorDefecto } from '@/api/entidades.api'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import { useListado } from '@/composables/useListado'
 import type { AreaItem } from '@/modules/entidad/entidad.types'
-import type { EntidadListaItem } from '@/modules/muni/muni.types'
+import type { EntidadCombo } from '@/modules/muni/muni.types'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUiStore } from '@/stores/ui.store'
 
@@ -21,21 +21,30 @@ interface ErrorApi {
 
 const ui = useUiStore()
 const auth = useAuthStore()
-const esAdmin = auth.usuario?.rol === 'ADMINISTRADOR'
+// Ve todas las entidades quien no está limitado a la suya (ADMINISTRADOR,
+// AUDITOR o un rol personalizado sin entidad asignada): elige una en el combo.
+const esAdmin = !auth.limitadoAEntidad
 const entidadAsignada = computed(() => (auth.perfil?.tipo === 'ENTIDAD' ? auth.perfil.entidad : null))
 
 // ADMINISTRADOR no tiene entidad propia — gestiona las áreas de la entidad
 // que elija explícitamente (05C hardening; `AreaController` exige
 // `entidad_id` para ese rol). Para otros usuarios, se toma por defecto su entidad asignada.
-const entidades = ref<EntidadListaItem[]>([])
-if (esAdmin) {
-  entidadesApi.index({ estado: 'APROBADA', ordenar_por: 'razon_social', por_pagina: 100 }).then((data) => (entidades.value = data.items))
-}
+const entidades = ref<EntidadCombo[]>([])
 
-const { items, paginacion, cargando, params, recargar } = useListado<AreaItem>(areasApi.index, {
-  ordenar_por: 'nombre',
-  direccion: 'asc',
-})
+// Quien elige entidad no carga hasta tenerla: se preselecciona la primera.
+const { items, paginacion, cargando, params, recargar } = useListado<AreaItem>(
+  areasApi.index,
+  { ordenar_por: 'nombre', direccion: 'asc' },
+  undefined,
+  { inmediato: !esAdmin },
+)
+if (esAdmin) {
+  entidadesApi.combo({ estado: 'APROBADA' }).then((data) => {
+    entidades.value = data
+    params.entidad_id = entidadPorDefecto(data) ?? undefined
+    if (params.entidad_id) recargar()
+  })
+}
 
 const leyenda = {
   proposito: "Áreas usuarias de la entidad; se eligen al crear un requerimiento.",
@@ -136,7 +145,6 @@ async function alternarActivo(item: AreaItem) {
         v-model="params.entidad_id as number"
         :items="entidades.map((e) => ({ title: e.razon_social, value: e.entidad_id }))"
         label="Entidad *"
-        clearable
         style="max-width: 260px"
         @update:model-value="recargar()"
       />

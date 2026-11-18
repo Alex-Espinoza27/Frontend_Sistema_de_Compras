@@ -3,7 +3,7 @@
 // paginación, mismo patrón que los demás catálogos. 05C hardening (pedido
 // explícitamente por el usuario): soporte para que el módulo de Usuarios
 // pueda registrar DNI/CE/PASAPORTE, con posibilidad de activar/desactivar.
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 
 import { adminApi } from '@/api/admin.api'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
@@ -39,6 +39,14 @@ const editando = ref<TipoDocumentoAdmin | null>(null)
 const form = reactive({ codigo: '', nombre: '', longitud: 8 })
 const guardando = ref(false)
 const erroresCampo = ref<Record<string, string[]>>({})
+// Un código duplicado (422) dejaría "Guardar" deshabilitado para siempre:
+// el error se limpia al editar el código.
+watch(
+  () => form.codigo,
+  () => {
+    if (erroresCampo.value.codigo) delete erroresCampo.value.codigo
+  },
+)
 
 const confirmacionAbierta = ref(false)
 const itemADesactivar = ref<TipoDocumentoAdmin | null>(null)

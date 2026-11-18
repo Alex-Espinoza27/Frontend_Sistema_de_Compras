@@ -8,7 +8,7 @@
 // y emite un enlace nuevo: el anterior deja de servir.
 // 05C hardening (pedido explícitamente por el usuario): captcha y diseño
 // igual al de Login (AuthSplitLayout).
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { authApi } from '@/api/auth.api'
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout.vue'
@@ -39,6 +39,19 @@ const erroresCampo = ref<Record<string, string[]>>({})
 
 const progreso = computed(() => (vigenciaSegundos.value ? (cuenta.restantes.value / vigenciaSegundos.value) * 100 : 0))
 const reintentoBloqueado = computed(() => reintento.restantes.value > 0)
+
+// Un error del servidor en :error-messages deja el campo inválido para
+// Vuetify y el botón (atado a formValido) quedaría deshabilitado para
+// siempre: se limpia en cuanto el usuario corrige ese campo.
+watch(email, () => {
+  if (erroresCampo.value.email) delete erroresCampo.value.email
+})
+watch(
+  () => captcha.respuesta.value,
+  () => {
+    if (erroresCampo.value.captcha) delete erroresCampo.value.captcha
+  },
+)
 
 /** Pide el enlace y arranca las dos cuentas regresivas. Devuelve si salió bien. */
 async function solicitar(): Promise<boolean> {

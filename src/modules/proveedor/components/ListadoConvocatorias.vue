@@ -27,6 +27,9 @@ const pestana = ref<EstadoGrupo>('VIGENTES')
 const { items, paginacion, cargando, params, recargar } = useListado<ConvocatoriaPublicaItem>(
   publicoApi.convocatorias,
   { estado_grupo: pestana.value, mias: props.mias, ordenar_por: 'fecha_fin', direccion: 'asc' },
+  undefined,
+  // Se carga recién con la entidad preseleccionada (ver onMounted).
+  { inmediato: false },
 )
 
 watch(pestana, (valor) => {
@@ -46,21 +49,22 @@ function elegirTipo(valor: TipoConvocatoria | null) {
   recargar()
 }
 
-// Entidad preseleccionada cuando solo hay una registrada en la plataforma
-// (05C hardening): evita el paso extra de elegir entidad cuando no hay nada
-// que elegir; si hay varias, sí se muestra el selector, sin preseleccionar.
+// Entidad preseleccionada: siempre la primera de la lista (como en el resto
+// de selectores de entidad) y se consulta con ella; el selector solo se
+// muestra si hay más de una (se puede limpiar para ver todas).
 const entidades = ref<EntidadPublica[]>([])
 const entidadId = ref<number | null>(null)
 const mostrarSelectorEntidad = computed(() => entidades.value.length > 1)
 onMounted(async () => {
-  const data = await publicoApi.entidades()
-  entidades.value = data.items
-  if (data.items.length === 1) {
-    entidadId.value = data.items[0].entidad_id
-    params.entidad_id = entidadId.value
+  try {
+    const data = await publicoApi.entidades()
+    entidades.value = data.items
+    entidadId.value = data.items[0]?.entidad_id ?? null
+    params.entidad_id = entidadId.value ?? undefined
+  } finally {
     recargar()
+    cargarTotales()
   }
-  cargarTotales()
 })
 function alCambiarEntidad() {
   params.entidad_id = entidadId.value ?? undefined

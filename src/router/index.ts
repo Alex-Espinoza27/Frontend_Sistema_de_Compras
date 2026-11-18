@@ -42,11 +42,15 @@ const router = createRouter({
           name: 'datos-abiertos',
           component: () => import('@/modules/publico/views/DatosAbiertosView.vue'),
         },
-        {
-          path: 'solicitud-entidad',
-          name: 'solicitud-entidad',
-          component: () => import('@/modules/publico/views/SolicitudEntidadView.vue'),
-        },
+        // Solicitud pública de alta de entidad: DESACTIVADA (backend también).
+        // Los enlaces viejos vuelven a la portada (convocatorias). Para
+        // reactivarla, quitar el redirect y descomentar el bloque.
+        { path: 'solicitud-entidad', redirect: '/' },
+        // {
+        //   path: 'solicitud-entidad',
+        //   name: 'solicitud-entidad',
+        //   component: () => import('@/modules/publico/views/SolicitudEntidadView.vue'),
+        // },
       ],
     },
     rutaAuth('/login', 'login', () => import('@/modules/auth/views/LoginView.vue')),

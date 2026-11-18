@@ -11,7 +11,7 @@
 // asignaciones nuevas (ver `UsuariosView.vue`), pero no afecta a quienes ya
 // lo tienen (decisión confirmada con el usuario). Mismo patrón que
 // `AreasView.vue` (`v-switch` en la columna "Estado").
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
 
 import { adminApi } from '@/api/admin.api'
 import SelectorPermisosPorModulo from '@/modules/muni/components/SelectorPermisosPorModulo.vue'
@@ -29,7 +29,8 @@ async function cargar() {
   cargando.value = true
   const [rolesData, permisosData] = await Promise.all([adminApi.roles(), adminApi.permisos()])
   roles.value = rolesData
-  permisosTodos.value = permisosData
+  // Un rol nuevo nunca es PROVEEDOR: sus permisos exclusivos no se ofrecen.
+  permisosTodos.value = permisosData.filter((p) => !p.solo_proveedor)
   cargando.value = false
 }
 cargar()
@@ -49,6 +50,16 @@ const nuevoFormValido = ref(false)
 const nuevoForm = reactive({ nombre: '', permisos: [] as string[] })
 const creando = ref(false)
 const erroresNuevo = ref<Record<string, string[]>>({})
+// Un nombre rechazado por el servidor (422) dejaría "Crear" deshabilitado
+// para siempre: el error se limpia al editar el nombre.
+watch(
+  () => nuevoForm.nombre,
+  () => {
+    if (!erroresNuevo.value.nombre) return
+    const { nombre: _nombre, ...resto } = erroresNuevo.value
+    erroresNuevo.value = resto
+  },
+)
 
 function abrirNuevo() {
   nuevoForm.nombre = ''
@@ -185,7 +196,20 @@ async function alternarActivo(rol: RolConPermisos) {
         <v-divider />
         <v-card-actions class="pa-4 bg-surface d-flex justify-end ga-2">
           <v-btn variant="outlined" color="secondary" class="px-5" @click="nuevoAbierto = false">Cancelar</v-btn>
-          <v-btn color="primary" variant="flat" elevation="2" class="px-6" :loading="creando" :disabled="!nuevoFormValido" @click="crearRol">Crear</v-btn>
+          <span v-if="nuevoForm.permisos.length === 0" class="text-caption text-medium-emphasis mr-2">
+            Selecciona al menos un permiso.
+          </span>
+          <v-btn
+            color="primary"
+            variant="flat"
+            elevation="2"
+            class="px-6"
+            :loading="creando"
+            :disabled="!nuevoFormValido || nuevoForm.permisos.length === 0"
+            @click="crearRol"
+          >
+            Crear
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

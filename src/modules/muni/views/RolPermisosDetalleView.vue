@@ -29,13 +29,19 @@ async function cargar() {
   cargando.value = true
   const [roles, permisos] = await Promise.all([adminApi.roles(), adminApi.permisos()])
   rolActual.value = roles.find((r) => r.rol === rol) ?? null
-  permisosTodos.value = permisos
   permisosSeleccionados.value = rolActual.value ? [...rolActual.value.permisos] : []
+  // PROVEEDOR tiene permisos fijos: se muestran solo los que tiene, sin editar.
+  // A los demás roles no se les ofrecen los permisos de la ficha y las
+  // ofertas del proveedor (sus rutas exigen el rol PROVEEDOR).
+  permisosTodos.value = rolActual.value?.permisos_fijos
+    ? permisos.filter((p) => permisosSeleccionados.value.includes(p.permiso))
+    : permisos.filter((p) => !p.solo_proveedor)
   cargando.value = false
 }
 cargar()
 
 const esReservado = computed(() => rolActual.value?.es_reservado ?? false)
+const permisosFijos = computed(() => rolActual.value?.permisos_fijos ?? false)
 
 const guardando = ref(false)
 async function guardar() {
@@ -93,10 +99,27 @@ async function alternarActivo() {
         </span>
       </div>
 
-      <SelectorPermisosPorModulo v-model="permisosSeleccionados" :permisos="permisosTodos" />
+      <v-alert v-if="permisosFijos" type="info" variant="tonal" density="compact" class="mb-4">
+        Rol reservado del sistema: sus módulos están predefinidos y no se editan.
+      </v-alert>
 
-      <div class="d-flex justify-end mt-6">
-        <v-btn v-can="'roles_permisos.gestionar'" color="primary" :loading="guardando" @click="guardar">
+      <SelectorPermisosPorModulo
+        v-model="permisosSeleccionados"
+        :permisos="permisosTodos"
+        :solo-lectura="permisosFijos"
+      />
+
+      <div v-if="!permisosFijos" class="d-flex justify-end align-center ga-2 mt-6">
+        <span v-if="permisosSeleccionados.length === 0" class="text-caption text-medium-emphasis">
+          Selecciona al menos un permiso.
+        </span>
+        <v-btn
+          v-can="'roles_permisos.gestionar'"
+          color="primary"
+          :loading="guardando"
+          :disabled="permisosSeleccionados.length === 0"
+          @click="guardar"
+        >
           Guardar cambios
         </v-btn>
       </div>

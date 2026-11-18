@@ -3,7 +3,7 @@
 // (aplicado por el backend, no por el frontend).
 import { computed, ref } from 'vue'
 
-import { entidadesApi } from '@/api/entidades.api'
+import { entidadesApi, entidadPorDefecto } from '@/api/entidades.api'
 import { publicoApi } from '@/api/publico.api'
 import { requerimientosApi } from '@/api/requerimientos.api'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
@@ -12,7 +12,7 @@ import BaseRangoFechas from '@/components/base/BaseRangoFechas.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import { useListado } from '@/composables/useListado'
 import type { RequerimientoListaItem } from '@/modules/entidad/entidad.types'
-import type { EntidadListaItem } from '@/modules/muni/muni.types'
+import type { EntidadCombo } from '@/modules/muni/muni.types'
 import type { RubroPublico } from '@/modules/publico/publico.types'
 import dayjs from '@/plugins/dayjs'
 import { useAuthStore } from '@/stores/auth.store'
@@ -21,22 +21,36 @@ import { hoyTexto } from '@/utils/fechas'
 
 const ui = useUiStore()
 const auth = useAuthStore()
-const esAdmin = auth.usuario?.rol === 'ADMINISTRADOR'
+// Ve todas las entidades quien no está limitado a la suya (ADMINISTRADOR,
+// AUDITOR o un rol personalizado sin entidad asignada): elige una en el combo.
+const esAdmin = !auth.limitadoAEntidad
 const entidadAsignada = computed(() => (auth.perfil?.tipo === 'ENTIDAD' ? auth.perfil.entidad : null))
 const rubros = ref<RubroPublico[]>([])
 publicoApi.rubros().then((data) => (rubros.value = data.items))
 
 // ADMINISTRADOR no tiene entidad propia y ve requerimientos de todas — combo para filtrar por una en particular.
-const entidades = ref<EntidadListaItem[]>([])
-if (esAdmin) {
-  entidadesApi.index({ ordenar_por: 'razon_social', por_pagina: 100 }).then((data) => (entidades.value = data.items))
-}
+const entidades = ref<EntidadCombo[]>([])
 
+// Quien elige entidad arranca con la primera preseleccionada (o la que ya
+// tenía elegida en esta sesión) y recién entonces consulta.
 const { items, paginacion, cargando, params, recargar } = useListado<RequerimientoListaItem>(
   requerimientosApi.index,
   { ordenar_por: 'fecha_creacion', direccion: 'desc', desde: hoyTexto(), hasta: hoyTexto() },
   'filtros_requerimientos',
+  { inmediato: !esAdmin },
 )
+if (esAdmin) {
+  entidadesApi
+    .combo()
+    .then((data) => {
+      entidades.value = data
+      if (!data.some((e) => e.entidad_id === params.entidad_id)) {
+        params.entidad_id = entidadPorDefecto(data) ?? undefined
+      }
+    })
+    .catch(() => {})
+    .finally(() => recargar())
+}
 
 const leyenda = {
   proposito: "Necesidades de bienes o servicios de tu entidad; de aquí se crea una convocatoria.",

@@ -9,13 +9,13 @@
 import { computed, reactive, ref, watch } from 'vue'
 
 import { adminApi } from '@/api/admin.api'
-import { entidadesApi } from '@/api/entidades.api'
+import { entidadesApi, entidadPorDefecto } from '@/api/entidades.api'
 import BaseConfirmacion from '@/components/base/BaseConfirmacion.vue'
 import BaseDatePicker from '@/components/base/BaseDatePicker.vue'
 import BaseTablaServidor from '@/components/base/BaseTablaServidor.vue'
 import BaseLeyendaFiltros from '@/components/base/BaseLeyendaFiltros.vue'
 import { useListado } from '@/composables/useListado'
-import type { EntidadListaItem, TipoDocumentoUsuario } from '@/modules/muni/muni.types'
+import type { EntidadCombo, TipoDocumentoUsuario } from '@/modules/muni/muni.types'
 import type { UsuarioPlataformaItem } from '@/modules/muni/muni.types'
 import { useUiStore } from '@/stores/ui.store'
 
@@ -38,8 +38,8 @@ const { items, paginacion, cargando, params, recargar } = useListado<UsuarioPlat
 const roles = ref<string[]>([])
 adminApi.roles().then((data) => (roles.value = data.filter((r) => r.activo && r.rol !== 'PROVEEDOR').map((r) => r.rol)))
 
-const entidadesAprobadas = ref<EntidadListaItem[]>([])
-entidadesApi.index({ estado: 'APROBADA', ordenar_por: 'razon_social', por_pagina: 100 }).then((data) => (entidadesAprobadas.value = data.items))
+const entidadesAprobadas = ref<EntidadCombo[]>([])
+entidadesApi.combo({ estado: 'APROBADA' }).then((data) => (entidadesAprobadas.value = data))
 
 // Tipos de documento para personas (DNI/CE/PASAPORTE): excluye RUC, ese es
 // para personas jurídicas (05C hardening, pedido explícitamente por el
@@ -52,7 +52,7 @@ adminApi.tiposDocumento().then((data) => {
 })
 
 const leyenda = {
-  proposito: "Usuarios internos del sistema (administradores y entidades) y sus accesos.",
+  proposito: "Usuarios internos y sus accesos. Con entidad asignada, el usuario solo ve los datos de esa entidad.",
   columnas: "Estado, Documento, Rol y Entidad.",
   filtros: "Buscar por DNI, nombre o correo, y filtrar por rol.",
 }
@@ -105,12 +105,22 @@ const form = reactive({
 const guardando = ref(false)
 const errorGeneral = ref('')
 const erroresCampo = ref<Record<string, string[]>>({})
-const esEntidad = computed(() => form.rol === 'ENTIDAD')
+// Entidad del usuario: obligatoria con rol ENTIDAD; opcional con un rol
+// personalizado (con entidad solo trabaja con los datos de esa entidad; sin
+// ella ve todas); ADMINISTRADOR y AUDITOR nunca llevan entidad (ven todas).
+const ROLES_SIN_ENTIDAD = ['ADMINISTRADOR', 'AUDITOR']
+const admiteEntidad = computed(() => !!form.rol && !ROLES_SIN_ENTIDAD.includes(form.rol))
+const entidadObligatoria = computed(() => form.rol === 'ENTIDAD')
 
 watch(
   () => form.rol,
-  (rol) => {
-    if (rol !== 'ENTIDAD') form.entidad_id = null
+  () => {
+    if (!admiteEntidad.value) form.entidad_id = null
+    // Obligatoria (rol ENTIDAD): se preselecciona la primera. En un rol
+    // personalizado queda vacía: ponerla lo limitaría a esa entidad sin querer.
+    else if (entidadObligatoria.value && !form.entidad_id) {
+      form.entidad_id = entidadPorDefecto(entidadesAprobadas.value)
+    }
   },
 )
 
@@ -464,11 +474,18 @@ async function confirmarRestablecerPassword() {
               />
             </v-col>
 
-            <v-col v-if="esEntidad" cols="12">
+            <v-col v-if="admiteEntidad" cols="12">
               <v-select
                 v-model="form.entidad_id"
                 :items="entidadesAprobadas.map((e) => ({ title: e.razon_social, value: e.entidad_id }))"
-                label="Entidad"
+                :label="entidadObligatoria ? 'Entidad *' : 'Entidad (opcional)'"
+                :clearable="!entidadObligatoria"
+                :hint="
+                  entidadObligatoria
+                    ? undefined
+                    : 'Con entidad, el usuario solo trabaja con los datos de esa entidad. Sin entidad, ve todas.'
+                "
+                persistent-hint
                 :error-messages="erroresCampo.entidad_id"
               />
             </v-col>

@@ -16,6 +16,9 @@ export function useListado<T>(
   fnListar: FnListar<T>,
   paramsIniciales: ListadoParams = {},
   clavePersistencia?: string,
+  // false: no carga al crearse; el llamador llama `recargar()` cuando tenga
+  // los filtros listos (ej. la entidad preseleccionada del combo).
+  opciones: { inmediato?: boolean } = {},
 ) {
   const items = ref<T[]>([])
   const paginacion = ref({
@@ -93,7 +96,7 @@ export function useListado<T>(
     () => recargar(),
   )
 
-  recargar()
+  if (opciones.inmediato !== false) recargar()
 
   return { items, paginacion, cargando, params, recargar }
 }

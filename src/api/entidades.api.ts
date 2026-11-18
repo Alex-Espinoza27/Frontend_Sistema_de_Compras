@@ -2,6 +2,7 @@ import cliente from './cliente'
 import type {
   AltaDirectaInput,
   AprobarEntidadInput,
+  EntidadCombo,
   EntidadDetalle,
   EntidadListaItem,
   UsuarioEntidad,
@@ -9,7 +10,19 @@ import type {
 } from '@/modules/muni/muni.types'
 import type { ListadoParams, Paginado } from '@/types/api'
 
+/**
+ * Entidad que los selectores preseleccionan: la primera aprobada del combo (o
+ * la primera, si ninguna lo está). Todas las pantallas con selector de entidad
+ * arrancan con ella y consultan de inmediato.
+ */
+export function entidadPorDefecto(lista: EntidadCombo[]): number | null {
+  return (lista.find((e) => e.estado === 'APROBADA') ?? lista[0])?.entidad_id ?? null
+}
+
 export const entidadesApi = {
+  /** Selectores de entidad. Quien está limitado a su entidad recibe solo la suya. */
+  combo: (params: { estado?: string } = {}) => cliente.get<never, EntidadCombo[]>('/entidades/combo', { params }),
+
   index: (params: ListadoParams) => cliente.get<never, Paginado<EntidadListaItem>>('/entidades', { params }),
 
   show: (id: number) => cliente.get<never, EntidadDetalle>(`/entidades/${id}`),
