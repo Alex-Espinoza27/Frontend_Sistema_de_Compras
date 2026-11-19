@@ -80,7 +80,7 @@ const enlaces = [
         <!-- Sesión (escritorio) -->
         <div class="d-none d-md-flex align-center ga-2 ml-2">
           <template v-if="!auth.autenticado">
-            <v-btn to="/login" variant="outlined" size="small" class="btn-borde text-none">
+            <v-btn to="/login" variant="outlined" color="primary" size="small" class="text-none">
               Iniciar sesión
             </v-btn>
             <v-btn to="/registro" variant="flat" size="small" class="btn-acento text-none">
